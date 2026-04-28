@@ -7,11 +7,11 @@ import Hero from './components/Hero'
 import AppDemo from './components/AppDemo'
 import Features from './components/Features'
 import HowItWorks from './components/HowItWorks'
-import Stats from './components/Stats'
 import ForBusiness from './components/ForBusiness'
 import Vs1C from './components/Vs1C'
 import CashbackTeaser from './components/CashbackTeaser'
 import Pricing from './components/Pricing'
+import ContactSection from './components/ContactSection'
 import Footer from './components/Footer'
 import Dashboard from './pages/Dashboard'
 import { SubscriptionProvider } from './context/SubscriptionContext'
@@ -25,17 +25,17 @@ function LandingPage() {
   const goDemo = () => navigate('/demo')
 
   return (
-    <div className="min-h-screen bg-dark font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#24272b] font-sans overflow-x-hidden">
       <Navbar onOpenModal={goDemo} onOpenLogin={goDemo} />
       <Hero onOpenModal={goDemo} />
       <AppDemo />
       <CashbackTeaser onOpenModal={goDemo} />
       <Features />
       <HowItWorks onOpenModal={goDemo} />
-      <Stats />
       <Vs1C onOpenModal={goDemo} />
       <ForBusiness onOpenModal={goDemo} />
       <Pricing onOpenModal={goDemo} />
+      <ContactSection />
       <Footer />
     </div>
   )

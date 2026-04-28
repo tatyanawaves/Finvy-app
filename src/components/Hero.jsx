@@ -30,24 +30,14 @@ const financialFigures = [
 
 export default function Hero({ onOpenModal }) {
   const lt = useLanding()
+  const heroTag = (lt.heroTag ?? 'Smart Finance for Kazakhstan').replace(/^[✦★\s]+/, '')
 
   return (
-    <section className="relative min-h-screen flex flex-col pt-14 overflow-hidden bg-[#020818]">
+    <section className="relative min-h-screen flex flex-col pt-14 overflow-hidden bg-[#0d1f3c]">
 
       {/* ── Deep background gradient ── */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#020818] via-[#0a1628] to-[#0d1f3c]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0d1f3c] via-[#123f7a] to-[#4F8EF7]" />
 
-      {/* ── Ambient glow orbs ── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Top-center large blue orb */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-[#4F8EF7]/18 rounded-full blur-[120px]" />
-        {/* Bottom-left accent */}
-        <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] bg-[#1a3a7c]/30 rounded-full blur-[100px]" />
-        {/* Top-right accent */}
-        <div className="absolute -top-20 right-0 w-[400px] h-[400px] bg-[#4F8EF7]/10 rounded-full blur-[90px]" />
-        {/* Center subtle glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#4F8EF7]/6 rounded-full blur-[80px]" />
-      </div>
 
       {/* ── Subtle grid overlay ── */}
       <div
@@ -67,7 +57,7 @@ export default function Hero({ onOpenModal }) {
             <p className="text-white/30 text-[10px] uppercase tracking-widest mb-2 font-bold">Balance</p>
             <p className="text-white font-black text-xl tabular-nums">₸ 842 500</p>
             <div className="mt-3 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#4F8EF7]" />
+
               <span className="text-[#4F8EF7] text-xs font-semibold">+12.4% this month</span>
             </div>
           </div>
@@ -84,7 +74,7 @@ export default function Hero({ onOpenModal }) {
         <div className="absolute bottom-1/4 right-[6%] lg:right-[12%] hidden lg:block">
           <div className="w-44 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded-2xl p-4 rotate-[-3deg] shadow-xl">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-[#4F8EF7]/20 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-[#4F8EF7]/20 flex items-center justify-center">
                 <span className="text-[#4F8EF7] text-xs">✓</span>
               </div>
               <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">AI Report</span>
@@ -100,12 +90,12 @@ export default function Hero({ onOpenModal }) {
 
         {/* Badge */}
         <div className="inline-flex items-center gap-2 mb-6 bg-[#4F8EF7]/10 backdrop-blur-sm border border-[#4F8EF7]/20 text-[#4F8EF7] text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#4F8EF7] animate-pulse" />
-          {lt.heroTag ?? 'Smart Finance for Kazakhstan'}
+
+          {heroTag}
         </div>
 
         {/* Headline */}
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight max-w-4xl mb-2">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight max-w-3xl mb-2">
           <span className="text-white">{lt.heroTitleLine1 ?? lt.heroTitle}</span>
           {lt.heroTitleLine2 && (
             <>
@@ -160,7 +150,7 @@ export default function Hero({ onOpenModal }) {
           <div className="marquee-track">
             {financialFigures.map((fig, i) => (
               <span key={i} className="inline-flex items-center gap-2 mx-8">
-                <span className="text-[#4F8EF7]/40 text-xs">★</span>
+
                 <span className="text-white/35 font-semibold text-sm">{fig.name}</span>
                 <span className="text-white/15 text-xs font-normal">{fig.role}</span>
               </span>

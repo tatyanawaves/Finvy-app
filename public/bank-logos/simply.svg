@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg data-bbox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" height="32" width="32" data-type="color">
+    <g>
+        <path fill="#262626" d="M32 0v32H0V0h32z" data-color="1"/>
+        <path fill="#FFDD00" d="M20 24.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z" data-color="2"/>
+        <path fill="#FFDD00" d="M14.095 4h4.812v15.193h-4.812V4Z" clip-rule="evenodd" fill-rule="evenodd" data-color="2"/>
+    </g>
+</svg>

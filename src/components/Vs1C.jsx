@@ -4,7 +4,7 @@ export default function Vs1C({ onOpenModal }) {
   const lt = useLanding()
 
   return (
-    <section className="bg-dark py-20 px-4">
+    <section className="bg-[#24272b] py-20 px-4">
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
@@ -22,13 +22,13 @@ export default function Vs1C({ onOpenModal }) {
 
         {/* Desktop table */}
         <div className="hidden md:block rounded-2xl overflow-hidden border border-white/10">
-          <div className="grid grid-cols-[1fr_1fr_1fr] bg-[#1a1a1a]">
+          <div className="grid grid-cols-[1fr_1fr_1fr] bg-[#2b2f34]">
             <div className="px-6 py-4 text-white/30 text-xs font-semibold uppercase tracking-wider border-r border-white/5">
               {lt.vs1cParam}
             </div>
             <div className="px-6 py-4 flex items-center gap-2 border-r border-white/5">
               <div className="w-6 h-6 rounded-lg bg-mint flex items-center justify-center">
-                <span className="text-dark font-black text-xs">f</span>
+                <span className="text-[#24272b] font-black text-xs">f</span>
               </div>
               <span className="text-white font-bold text-sm">{lt.vs1cFinvy}</span>
             </div>
@@ -43,7 +43,7 @@ export default function Vs1C({ onOpenModal }) {
             <div
               key={i}
               className={`grid grid-cols-[1fr_1fr_1fr] border-t border-white/5 ${
-                i % 2 === 0 ? 'bg-[#161616]' : 'bg-[#141414]'
+                i % 2 === 0 ? 'bg-[#282c31]' : 'bg-[#24272b]'
               }`}
             >
               <div className="px-6 py-4 border-r border-white/5 flex items-center">
@@ -68,7 +68,7 @@ export default function Vs1C({ onOpenModal }) {
             <div className="text-white/30 text-xs font-semibold uppercase tracking-wider">{lt.vs1cParam}</div>
             <div className="flex items-center gap-1.5">
               <div className="w-5 h-5 rounded-md bg-mint flex items-center justify-center flex-shrink-0">
-                <span className="text-dark font-black text-[10px]">f</span>
+                <span className="text-[#24272b] font-black text-[10px]">f</span>
               </div>
               <span className="text-white font-bold text-xs">{lt.vs1cFinvy}</span>
             </div>
@@ -81,8 +81,8 @@ export default function Vs1C({ onOpenModal }) {
           </div>
 
           {lt.vs1cRows.map((row, i) => (
-            <div key={i} className="rounded-xl border border-white/8 bg-[#161616] overflow-hidden">
-              <div className="px-4 py-2 border-b border-white/5 bg-[#1a1a1a]">
+            <div key={i} className="rounded-xl border border-white/8 bg-[#282c31] overflow-hidden">
+              <div className="px-4 py-2 border-b border-white/5 bg-[#2b2f34]">
                 <span className="text-white/60 text-xs font-semibold">{row.aspect}</span>
               </div>
               <div className="grid grid-cols-2 divide-x divide-white/5">
@@ -107,7 +107,7 @@ export default function Vs1C({ onOpenModal }) {
           </div>
           <button
             onClick={onOpenModal}
-            className="flex-shrink-0 bg-mint text-dark font-bold text-sm px-6 py-3 rounded-xl hover:bg-mint/90 transition-colors"
+            className="flex-shrink-0 bg-mint text-[#24272b] font-bold text-sm px-6 py-3 rounded-xl hover:bg-mint/90 transition-colors"
           >
             {lt.vs1cBtn}
           </button>

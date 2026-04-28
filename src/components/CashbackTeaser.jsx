@@ -1,5 +1,19 @@
 import { useLanding } from '../context/LanguageContext'
 
+const banks = [
+  { name: 'Halyk', icon: '/bank-logos/halyk.png' },
+  { name: 'Freedom', icon: '/bank-logos/freedom.ico' },
+  { name: 'RBK', icon: '/bank-logos/rbk.ico' },
+  { name: 'Home', icon: '/bank-logos/homecredit.png' },
+  { name: 'Simply', icon: '/bank-logos/simply.png' },
+  { name: 'Eurasian', icon: '/bank-logos/eurasian.ico' },
+  { name: 'Bereke', icon: '/bank-logos/bereke.svg' },
+  { name: 'Altyn', icon: '/bank-logos/altyn.png' },
+  { name: 'Nurbank', icon: '/bank-logos/nurbank.png' },
+  { name: 'Primus', icon: '/bank-logos/primus.ico' },
+  { name: 'Shinhan', icon: '/bank-logos/shinhan.ico' },
+]
+
 export default function CashbackTeaser({ onOpenModal }) {
   const lt = useLanding()
 
@@ -51,7 +65,7 @@ export default function CashbackTeaser({ onOpenModal }) {
         <div className="grid lg:grid-cols-2 gap-6 items-start">
 
           {/* Left: Example calculation table */}
-          <div className="bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden">
+          <div className="bg-[#24272b] border border-white/[0.08] rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
                 {lt.cashbackExampleTitle}
@@ -124,23 +138,13 @@ export default function CashbackTeaser({ onOpenModal }) {
             <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
               <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mb-3">{lt.cashbackBanksLabel}</p>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { logo: '🟢', name: 'Halyk' },
-                  { logo: '🟠', name: 'Freedom' },
-                  { logo: '🔵', name: 'RBK' },
-                  { logo: '🩷', name: 'Home' },
-                  { logo: '🟣', name: 'Simply' },
-                  { logo: '🔴', name: 'Eurasian' },
-                  { logo: '🟩', name: 'Bereke' },
-                  { logo: '🟡', name: 'Altyn' },
-                  { logo: '🔷', name: 'Nurbank' },
-                  { logo: '💜', name: 'Primus' },
-                  { logo: '🟧', name: 'Shinhan' },
-                ].map(b => (
-                  <div key={b.name}
-                    className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2.5 py-1.5">
-                    <span className="text-sm">{b.logo}</span>
-                    <span className="text-white/45 text-xs font-medium">{b.name}</span>
+                {banks.map((bank) => (
+                  <div key={bank.name}
+                    className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2.5 py-1.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+                      <img src={bank.icon} alt="" className="h-full w-full object-contain" loading="lazy" />
+                    </span>
+                    <span className="text-white/45 text-xs font-medium">{bank.name}</span>
                   </div>
                 ))}
               </div>
@@ -149,9 +153,9 @@ export default function CashbackTeaser({ onOpenModal }) {
             {/* CTA */}
             <button
               onClick={onOpenModal}
-              className="w-full py-4 rounded-xl bg-mint text-dark font-black text-sm hover:bg-mint/90 active:scale-[0.99] transition-all shadow-[0_0_30px_rgba(79,142,247,0.2)] flex flex-col items-center gap-0.5">
+              className="w-full py-4 rounded-xl bg-mint text-[#24272b] font-black text-sm hover:bg-mint/90 active:scale-[0.99] transition-all shadow-[0_0_30px_rgba(79,142,247,0.2)] flex flex-col items-center gap-0.5">
               <span>{lt.cashbackCta}</span>
-              <span className="text-dark/50 text-[11px] font-normal">{lt.cashbackCtaSub}</span>
+              <span className="text-[#24272b]/50 text-[11px] font-normal">{lt.cashbackCtaSub}</span>
             </button>
           </div>
         </div>

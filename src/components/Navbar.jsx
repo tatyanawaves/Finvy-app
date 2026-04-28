@@ -59,7 +59,7 @@ function LangDropdown({ inMenu = false }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[90px]">
+        <div className="absolute right-0 top-full mt-1 bg-[#2b2f34] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[90px]">
           {LANGS.map(l => (
             <button
               key={l.code}
@@ -90,7 +90,7 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-dark/95 backdrop-blur-sm border-b border-white/5">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#24272b]/95 backdrop-blur-sm border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Left: hamburger + logo */}
@@ -135,7 +135,7 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
           {/* Right: lang + CTAs */}
           <div className="flex items-center gap-3">
             <LangDropdown />
-            <button onClick={onOpenModal} className="bg-mint text-dark text-sm font-semibold px-4 py-2 rounded-full hover:bg-mint/90 transition-colors whitespace-nowrap">
+            <button onClick={onOpenModal} className="bg-mint text-[#24272b] text-sm font-semibold px-4 py-2 rounded-full hover:bg-mint/90 transition-colors whitespace-nowrap">
               {lt.signUp}
             </button>
             <button onClick={onOpenLogin} className="hidden sm:block border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-full hover:border-white/40 transition-colors">
@@ -147,7 +147,7 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
 
       {/* Mobile menu dropdown */}
       {menuOpen && (
-        <div className="lg:hidden bg-dark/98 border-t border-white/10 px-4 py-4 flex flex-col gap-3">
+        <div className="lg:hidden bg-[#24272b]/98 border-t border-white/10 px-4 py-4 flex flex-col gap-3">
           {/* Nav links */}
           <div className="flex flex-col gap-1">
             {lt.navLinks.map(item => (
@@ -166,7 +166,7 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => { setMenuOpen(false); onOpenModal() }}
-              className="flex-1 bg-mint text-dark text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-mint/90 transition-colors"
+              className="flex-1 bg-mint text-[#24272b] text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-mint/90 transition-colors"
             >
               {lt.signUp}
             </button>

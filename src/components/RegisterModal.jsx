@@ -50,7 +50,7 @@ function StepOne({ onNext, lt }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-dark font-bold text-sm">1</div>
+        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-[#24272b] font-bold text-sm">1</div>
         <div className="flex-1 h-px bg-gray-200" />
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 font-bold text-sm">2</div>
       </div>
@@ -89,7 +89,7 @@ function StepOne({ onNext, lt }) {
       {apiError && <p className="text-red-500 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2">{apiError}</p>}
 
       <button onClick={handleContinue} disabled={loading}
-        className="w-full py-4 rounded-xl font-bold text-dark text-base transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="w-full py-4 rounded-xl font-bold text-[#24272b] text-base transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: 'linear-gradient(90deg, #4F8EF7, #5BC8F5)' }}>
         {loading ? lt.regCreating : lt.regContinue}
       </button>
@@ -181,7 +181,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
         <div className="w-16 h-16 rounded-full bg-mint/20 flex items-center justify-center text-3xl">🎉</div>
         <h3 className="text-xl font-bold text-gray-800">{lt.regDoneTitle}</h3>
         <p className="text-gray-500 text-sm">{lt.regDoneSub}<br />{lt.regDoneSub2}</p>
-        <button onClick={handleDashboard} className="mt-2 bg-dark text-white px-8 py-3 rounded-xl font-semibold hover:bg-dark/80 transition-colors">
+        <button onClick={handleDashboard} className="mt-2 bg-[#24272b] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#24272b]/85 transition-colors">
           {lt.regGoDashboard}
         </button>
       </div>
@@ -191,9 +191,9 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
   return (
     <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-dark font-bold text-sm">✓</div>
+        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-[#24272b] font-bold text-sm">✓</div>
         <div className="flex-1 h-px bg-mint" />
-        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-dark font-bold text-sm">2</div>
+        <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-[#24272b] font-bold text-sm">2</div>
       </div>
 
       <p className="text-sm text-gray-500">{lt.regSetupTitle} <span className="text-[#4F8EF7] font-semibold">Finvy</span> {lt.regSetupTitleEnd}</p>
@@ -217,7 +217,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
           {sizes.map(s => (
             <button key={s} onClick={() => setEmployees(s)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                employees === s ? 'border-mint bg-mint/10 text-dark' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                employees === s ? 'border-mint bg-mint/10 text-[#24272b]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>{s}</button>
           ))}
         </div>
@@ -233,7 +233,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
           ].map(opt => (
             <button key={String(opt.val)} onClick={() => setIsStudent(opt.val)}
               className={`px-5 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                isStudent === opt.val ? 'border-mint bg-mint/10 text-dark' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                isStudent === opt.val ? 'border-mint bg-mint/10 text-[#24272b]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>{opt.label}</button>
           ))}
         </div>
@@ -246,7 +246,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
           {revenueRanges.map(r => (
             <button key={r} onClick={() => setRevenue(r)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                revenue === r ? 'border-mint bg-mint/10 text-dark' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                revenue === r ? 'border-mint bg-mint/10 text-[#24272b]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>{r}</button>
           ))}
         </div>
@@ -259,7 +259,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
           {bankOptions.map(b => (
             <button key={b} onClick={() => toggleArr(banks, setBanks, b)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                banks.includes(b) ? 'border-mint bg-mint/10 text-dark' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                banks.includes(b) ? 'border-mint bg-mint/10 text-[#24272b]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>{b}</button>
           ))}
         </div>
@@ -272,7 +272,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
           {expenseTypes.map(e => (
             <button key={e} onClick={() => toggleArr(expenses, setExpenses, e)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                expenses.includes(e) ? 'border-mint bg-mint/10 text-dark' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                expenses.includes(e) ? 'border-mint bg-mint/10 text-[#24272b]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>{e}</button>
           ))}
         </div>
@@ -281,7 +281,7 @@ function StepTwo({ data, onClose, lt, selectedPlan, selectedPeriod }) {
       {/* Submit */}
       {checkoutError && <p className="text-red-500 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2">{checkoutError}</p>}
       <button onClick={handleCheckout} disabled={checkoutLoading}
-        className="w-full py-4 rounded-xl font-bold text-dark text-base transition-opacity hover:opacity-90 flex-shrink-0 disabled:opacity-60"
+        className="w-full py-4 rounded-xl font-bold text-[#24272b] text-base transition-opacity hover:opacity-90 flex-shrink-0 disabled:opacity-60"
         style={{ background: 'linear-gradient(90deg, #4F8EF7, #5BC8F5)' }}>
         {checkoutLoading ? (lt.regRedirecting ?? 'Redirecting to payment...') : lt.regStartTrial}
       </button>
@@ -322,7 +322,7 @@ export default function RegisterModal({ onClose, initialMode = 'register', selec
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-[#24272b]/60 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl flex overflow-hidden max-h-[90vh]">
         {/* Left panel */}
@@ -401,7 +401,7 @@ export default function RegisterModal({ onClose, initialMode = 'register', selec
                 placeholder={lt.regPassword} className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none bg-gray-50 focus:border-mint transition-colors"
                 onKeyDown={e => e.key === 'Enter' && handleLogin()} />
               <button onClick={handleLogin} disabled={loginLoading}
-                className="w-full py-4 rounded-xl font-bold text-dark text-base transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="w-full py-4 rounded-xl font-bold text-[#24272b] text-base transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: 'linear-gradient(90deg, #4F8EF7, #5BC8F5)' }}>
                 {loginLoading ? lt.regLoggingIn : lt.regLogIn}
               </button>

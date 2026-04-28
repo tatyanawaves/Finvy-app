@@ -56,7 +56,7 @@ export default function AppDemo() {
   ]
 
   return (
-    <section className="bg-dark grid-bg py-16 px-4">
+    <section className="bg-[#24272b] grid-bg py-16 px-4">
       <div className="max-w-6xl mx-auto">
 
         {/* Section title */}
@@ -70,13 +70,13 @@ export default function AppDemo() {
         </div>
 
         {/* ── MOBILE view ── */}
-        <div className="md:hidden rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#111]">
+        <div className="md:hidden rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#24272b]">
 
           {/* App top bar */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#0f0f0f] border-b border-white/10">
+          <div className="flex items-center justify-between px-4 py-3 bg-[#24272b] border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-mint flex items-center justify-center flex-shrink-0">
-                <span className="text-dark font-black text-[10px]">fv</span>
+                <span className="text-[#24272b] font-black text-[10px]">fv</span>
               </div>
               <div>
                 <p className="text-[#4F8EF7] text-sm font-bold leading-none">Finvy</p>
@@ -84,7 +84,7 @@ export default function AppDemo() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="bg-mint text-dark text-[11px] font-bold px-3 py-1.5 rounded-lg">
+              <button className="bg-mint text-[#24272b] text-[11px] font-bold px-3 py-1.5 rounded-lg">
                 {lt.appDemoIncome ?? '+ Доход'}
               </button>
               <button className="bg-red-500/80 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">
@@ -97,7 +97,7 @@ export default function AppDemo() {
           </div>
 
           {/* Tabs — scrollable */}
-          <div className="flex items-center gap-4 px-4 py-2.5 border-b border-white/10 overflow-x-auto scrollbar-none bg-[#111]">
+          <div className="flex items-center gap-4 px-4 py-2.5 border-b border-white/10 overflow-x-auto scrollbar-none bg-[#24272b]">
             {tabs.slice(0, 4).map((tab, i) => (
               <button
                 key={tab}
@@ -109,7 +109,7 @@ export default function AppDemo() {
           </div>
 
           {/* Balance summary */}
-          <div className="px-4 py-3 bg-[#0f0f0f] border-b border-white/10 flex items-center justify-between">
+          <div className="px-4 py-3 bg-[#24272b] border-b border-white/10 flex items-center justify-between">
             <div>
               <p className="text-white/40 text-[10px]">{lt.appDemoTotal ?? 'Итого на счетах'}</p>
               <p className="text-white text-lg font-bold">₸ 5 412 000</p>
@@ -126,7 +126,7 @@ export default function AppDemo() {
 
           {/* Transaction cards */}
           <div className="divide-y divide-white/5">
-            <div className="px-4 py-2 bg-[#111]">
+            <div className="px-4 py-2 bg-[#24272b]">
               <span className="text-white/30 text-[10px] font-semibold uppercase tracking-wider">
                 {lt.appDemoFutureTx ?? 'Предстоящие транзакции • 95'} ▾
               </span>
@@ -161,14 +161,14 @@ export default function AppDemo() {
         </div>
 
         {/* ── DESKTOP view ── */}
-        <div className="hidden md:block rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#1a1a1a]">
+        <div className="hidden md:block rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#2b2f34]">
 
           {/* App top bar */}
-          <div className="flex items-center justify-between px-6 py-3 bg-[#111] border-b border-white/10">
+          <div className="flex items-center justify-between px-6 py-3 bg-[#24272b] border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-mint flex items-center justify-center">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1.5C4.015 1.5 1.5 4.015 1.5 7S4.015 12.5 7 12.5 12.5 9.985 12.5 7 9.985 1.5 7 1.5z" fill="#0F0F0F"/>
+                  <path d="M7 1.5C4.015 1.5 1.5 4.015 1.5 7S4.015 12.5 7 12.5 12.5 9.985 12.5 7 9.985 1.5 7 1.5z" fill="#24272b"/>
                   <path d="M7 4v6M4.5 6.5h5" stroke="#4F8EF7" strokeWidth="1.2" strokeLinecap="round"/>
                 </svg>
               </div>
@@ -178,7 +178,7 @@ export default function AppDemo() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg">
+              <button className="bg-mint text-[#24272b] text-xs font-bold px-4 py-2 rounded-lg">
                 {lt.appDemoIncome ?? '+ Income'}
               </button>
               <button className="bg-red-500/80 text-white text-xs font-bold px-4 py-2 rounded-lg">
@@ -229,7 +229,7 @@ export default function AppDemo() {
 
               {/* Filters */}
               <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <button className="bg-dark text-white text-xs px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-1">
+                <button className="bg-[#24272b] text-white text-xs px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-1">
                   {lt.appDemoAllTime ?? 'All time'} ▾
                 </button>
                 <div className="flex-1 max-w-xs bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">

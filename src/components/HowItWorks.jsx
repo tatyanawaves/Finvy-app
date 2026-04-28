@@ -4,7 +4,7 @@ export default function HowItWorks() {
   const lt = useLanding()
 
   return (
-    <section id="how-it-works" className="bg-dark py-20 px-4">
+    <section id="how-it-works" className="bg-[#24272b] py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
           <h2 className="text-4xl lg:text-5xl font-black text-white max-w-sm">
@@ -19,7 +19,7 @@ export default function HowItWorks() {
           {lt.steps.map((step, i) => (
             <div
               key={i}
-              className={`bg-[#1a1a1a] border border-white/10 rounded-2xl p-7 ${i === 4 ? 'md:col-span-2 md:max-w-sm' : ''}`}
+              className={`bg-[#2b2f34] border border-white/10 rounded-2xl p-7 ${i === 4 ? 'md:col-span-2 md:max-w-sm' : ''}`}
             >
               <span className="text-xs bg-white/10 text-white/50 px-3 py-1 rounded-full font-medium">
                 {lt.stepLabel} {String(i + 1).padStart(2, '0')}

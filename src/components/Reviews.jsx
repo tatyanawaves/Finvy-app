@@ -10,7 +10,7 @@ export default function Reviews({ onOpenModal }) {
   const lt = useLanding()
 
   return (
-    <section className="bg-dark py-20 px-4">
+    <section className="bg-[#24272b] py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">{lt.reviewsTitle}</h2>
@@ -23,7 +23,7 @@ export default function Reviews({ onOpenModal }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {lt.reviews.map((r, i) => (
-            <div key={i} className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-7">
+            <div key={i} className="bg-[#2b2f34] border border-white/10 rounded-2xl p-7">
               <div className="flex gap-0.5 mb-4">
                 {[...Array(r.rating)].map((_, j) => <StarIcon key={j} />)}
               </div>
@@ -40,9 +40,9 @@ export default function Reviews({ onOpenModal }) {
         <div className="mt-16 text-center">
           <h3 className="text-3xl font-black text-white mb-6">{lt.readyTitle}</h3>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <button onClick={onOpenModal} className="bg-mint text-dark font-bold px-8 py-4 rounded-2xl hover:bg-mint/90 transition-colors text-base flex items-center gap-3">
+            <button onClick={onOpenModal} className="bg-mint text-[#24272b] font-bold px-8 py-4 rounded-2xl hover:bg-mint/90 transition-colors text-base flex items-center gap-3">
               {lt.tryFree}
-              <span className="bg-dark/20 text-xs px-2 py-0.5 rounded-full">{lt.demoBadge}</span>
+              <span className="bg-[#24272b]/20 text-xs px-2 py-0.5 rounded-full">{lt.demoBadge}</span>
             </button>
             <button className="border border-white/20 text-white font-semibold px-8 py-4 rounded-2xl hover:border-white/40 transition-colors text-base">
               {lt.bookDemo}

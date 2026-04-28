@@ -4,7 +4,7 @@ export default function Stats() {
   const lt = useLanding()
 
   return (
-    <section className="bg-gradient-to-b from-dark via-[#0d2420] to-dark py-20 px-4">
+    <section className="bg-gradient-to-b from-[#24272b] via-[#2b2f34] to-[#24272b] py-20 px-4">
       <div className="max-w-6xl mx-auto">
         {/* "Trusted by" section */}
         <div className="text-center mb-16">
@@ -15,7 +15,7 @@ export default function Stats() {
         </div>
 
         {/* Support section */}
-        <div className="bg-[#1a1a1a] rounded-2xl p-10 mb-8 border border-white/10">
+        <div className="bg-[#2b2f34] rounded-2xl p-10 mb-8 border border-white/10">
           <h3 className="text-3xl font-black text-white mb-8 text-center">
             {lt.supportTitle}
           </h3>
