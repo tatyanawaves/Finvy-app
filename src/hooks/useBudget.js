@@ -261,6 +261,19 @@ export function currentMonthKey(date = new Date()) {
   return `${y}-${m}`
 }
 
+// ─── Helper: roll over a month's leftover into the next month ───────────────
+// Calls the SQL function monthly_budgets_rollover. Returns { items, error }.
+export async function rolloverMonth({ userId, fromMonth, toMonth }) {
+  if (!userId || userId === 'demo') return { error: 'demo' }
+  const { data, error } = await supabase.rpc('monthly_budgets_rollover', {
+    p_user_id: userId,
+    p_from_month: fromMonth,
+    p_to_month: toMonth,
+  })
+  if (error) return { error: error.message }
+  return { items: data || [] }
+}
+
 // ─── Helper: shift a month key by N months ───────────────────────────────────
 export function shiftMonth(monthKey, delta) {
   const [yearStr, monthStr] = monthKey.split('-')
