@@ -10,6 +10,7 @@ const translations = {
   en: {
     // Tabs
     transactions: 'Transactions',
+    budget: 'Budget',
     analytics: 'Analytics',
     calendar: 'Calendar',
     users: 'Users',
@@ -185,6 +186,7 @@ const translations = {
 
   ru: {
     transactions: 'Транзакции',
+    budget: 'Бюджет',
     analytics: 'Аналитика',
     calendar: 'Календарь',
     users: 'Пользователи',
@@ -349,6 +351,7 @@ const translations = {
   kz: {
     // Tabs
     transactions: 'Транзакциялар',
+    budget: 'Бюджет',
     analytics: 'Аналитика',
     calendar: 'Күнтізбе',
     users: 'Пайдаланушылар',

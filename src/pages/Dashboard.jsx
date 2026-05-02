@@ -13,6 +13,7 @@ import CategoriesView from './dashboard/CategoriesView'
 import ReportsView from './dashboard/ReportsView'
 import SettingsView from './dashboard/SettingsView'
 import AIAnalyticsView from './dashboard/AIAnalyticsView'
+import BudgetView from './dashboard/BudgetView'
 import AddTransactionModal from './dashboard/AddTransactionModal'
 import AddAccountModal from './dashboard/AddAccountModal'
 import OnboardingSurvey from './dashboard/OnboardingSurvey'
@@ -99,6 +100,7 @@ function DashboardInner({ demo }) {
 
   const currentTab = location.pathname.includes('ai') ? 'ai'
     : location.pathname.includes('analytics') ? 'analytics'
+    : location.pathname.includes('budget') ? 'budget'
     : location.pathname.includes('calendar') ? 'calendar'
     : location.pathname.includes('taxes') ? 'taxes'
     : location.pathname.includes('payroll') ? 'payroll'
@@ -169,6 +171,7 @@ function DashboardInner({ demo }) {
   const base = demo ? '/demo' : '/dashboard'
   const tabs = [
     { key: 'transactions', label: t.transactions,  path: base },
+    { key: 'budget',      label: t.budget || 'Бюджет', path: `${base}/budget` },
     { key: 'analytics',   label: t.analytics,     path: `${base}/analytics` },
     { key: 'ai',          label: `✦ ${t.aiAnalytics || 'AI'}`, path: `${base}/ai` },
     { key: 'calendar',    label: t.calendar,       path: `${base}/calendar` },
@@ -391,6 +394,7 @@ function DashboardInner({ demo }) {
           <Routes>
             <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
+            <Route path="budget" element={<BudgetView userId={user.id} refreshKey={refreshKey} demo={demo} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="calendar" element={<CalendarView userId={user.id} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="users" element={<UsersView />} />

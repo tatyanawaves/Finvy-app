@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import { fetchCategorySpent, fetchBudgetRow, currentMonthKey } from '../../hooks/useBudget'
 
 const CATEGORIES_I18N = {
   en: {
@@ -30,6 +31,35 @@ export default function AddTransactionModal({ type: initialType, userId, account
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Budget hint: shows remaining amount for the selected expense category in the current month
+  const [budgetHint, setBudgetHint] = useState(null) // { planned, spent, remaining, willOverflow }
+
+  // Recompute budget hint when category/amount/date changes (only for expense)
+  useEffect(() => {
+    let cancelled = false
+    setBudgetHint(null)
+    if (type !== 'expense' || !category || !userId) return
+    const monthKey = (date || '').slice(0, 7) || currentMonthKey()
+    ;(async () => {
+      const [row, spent] = await Promise.all([
+        fetchBudgetRow({ userId, month: monthKey, category }),
+        fetchCategorySpent({ userId, month: monthKey, category }),
+      ])
+      if (cancelled) return
+      if (!row) {
+        setBudgetHint({ noBudget: true, spent })
+        return
+      }
+      const planned = Number(row.planned_amount) || 0
+      const rolloverIn = Number(row.rollover_in) || 0
+      const cap = planned + rolloverIn
+      const remaining = cap - spent
+      const amt = Number(amount) || 0
+      const willOverflow = amt > 0 && (spent + amt > cap)
+      setBudgetHint({ planned, cap, spent, remaining, willOverflow, after: cap - spent - amt })
+    })()
+    return () => { cancelled = true }
+  }, [type, category, userId, date, amount])
 
   const TYPE_CONFIG = {
     income:   { amountColor: 'text-mint',    icon: '+' },
@@ -263,6 +293,39 @@ export default function AddTransactionModal({ type: initialType, userId, account
                   <option key={cat} value={cat} style={{ background: '#1a1a1a' }}>{cat}</option>
                 ))}
               </select>
+              {/* Budget hint — only for expense + selected category */}
+              {type === 'expense' && category && budgetHint && (
+                <div
+                  className={`mt-2 rounded-lg border px-3 py-2 text-xs ${
+                    budgetHint.noBudget
+                      ? 'border-white/10 bg-white/[0.03] text-white/55'
+                      : budgetHint.willOverflow
+                        ? 'border-red-400/30 bg-red-400/[0.06] text-red-400'
+                        : (budgetHint.remaining < budgetHint.cap * 0.1)
+                          ? 'border-amber-400/30 bg-amber-400/[0.06] text-amber-400'
+                          : 'border-mint/25 bg-mint/[0.06] text-mint'
+                  }`}
+                >
+                  {budgetHint.noBudget ? (
+                    <span>
+                      Бюджет на «{category}» не задан в этом месяце. Уже потрачено: {Math.round(budgetHint.spent).toLocaleString('ru-RU')} ₸.
+                    </span>
+                  ) : budgetHint.willOverflow ? (
+                    <span>
+                      <span className="font-semibold">⚠ Превысит лимит</span> на {Math.round(Math.abs(budgetHint.after)).toLocaleString('ru-RU')} ₸.
+                      Сейчас осталось: {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ из {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸.
+                    </span>
+                  ) : (
+                    <span>
+                      <span className="font-semibold">Осталось в категории:</span>{' '}
+                      {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ из {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸
+                      {Number(amount) > 0 && (
+                        <span className="text-white/55"> → после операции: {Math.round(budgetHint.after).toLocaleString('ru-RU')} ₸</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
