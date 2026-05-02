@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import BudgetAlertWidget from './BudgetAlertWidget'
 
 const PERIOD_KEYS = ['week', 'month', 'quarter', 'year', 'all']
 
@@ -47,6 +49,8 @@ const CURRENCY_SYMBOL = { USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£
 const symOf = (c) => CURRENCY_SYMBOL[c] || (c || '')
 
 export default function TransactionsView({ userId, refreshKey, accounts, currency = 'USD', demoData }) {
+  const { pathname } = useLocation()
+  const basePath = pathname.startsWith('/demo') ? '/demo' : '/dashboard'
   const { t, lang } = useLanguage()
   const sym = symOf(currency)
   const [transactions, setTransactions] = useState([])
@@ -115,6 +119,9 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Budget alert widget — shown only when there are critical/warning categories */}
+      <BudgetAlertWidget userId={userId} demo={!!demoData} basePath={basePath} />
+
       {/* Summary bar */}
       <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-6 py-3 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none">
         <div className="min-w-[88px]">

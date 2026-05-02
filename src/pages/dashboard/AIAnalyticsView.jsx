@@ -305,6 +305,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
   const [txs, setTxs] = useState(demoData || [])
   const [accounts, setAccounts] = useState(demoAccounts || [])
   const [plannedOps, setPlannedOps] = useState([])
+  const [budgetSnapshot, setBudgetSnapshot] = useState(null) // {month, rows, totals, monthIncome, toBudget}
   const [loading, setLoading] = useState(!demoData)
   const [insights, setInsights] = useState(demoData ? computeInsights(demoData, lang) : [])
   const [messages, setMessages] = useState([
@@ -354,10 +355,55 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
     }
   }, [userId, demoData])
 
+  // Load current month's budget snapshot for AI context
+  useEffect(() => {
+    if (demoData) {
+      setBudgetSnapshot(null)
+      return
+    }
+    const loadBudget = async () => {
+      const now = new Date()
+      const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      const { data, error } = await supabase
+        .from('monthly_budgets')
+        .select('category, planned_amount, rollover_in')
+        .eq('user_id', userId)
+        .eq('month', m)
+      if (error) return
+      // Compute spent per category from already-loaded transactions for this month
+      const spentMap = {}
+      for (const tx of txs) {
+        const txMonth = (tx.date || '').slice(0, 7)
+        if (txMonth !== m || tx.type !== 'expense') continue
+        const cat = tx.category || 'Другое'
+        spentMap[cat] = (spentMap[cat] || 0) + Math.abs(Number(tx.amount) || 0)
+      }
+      setBudgetSnapshot({ month: m, rows: data || [], spent: spentMap })
+    }
+    loadBudget()
+  }, [userId, demoData, txs])
+
   // Scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Format budget snapshot as a short text block for AI context
+  const formatBudgetText = useCallback((amount) => {
+    if (!budgetSnapshot || !budgetSnapshot.rows.length) return null
+    const lines = budgetSnapshot.rows.map((b) => {
+      const planned = Number(b.planned_amount) || 0
+      const rollover = Number(b.rollover_in) || 0
+      const cap = planned + rollover
+      const spent = Number(budgetSnapshot.spent[b.category] || 0)
+      const remaining = cap - spent
+      const pct = cap > 0 ? Math.round((spent / cap) * 100) : 0
+      return `${b.category}: план ${amount(cap)}, потрачено ${amount(spent)} (${pct}%), осталось ${amount(remaining)}`
+    })
+    const totalPlanned = budgetSnapshot.rows.reduce((s, b) => s + (Number(b.planned_amount) || 0) + (Number(b.rollover_in) || 0), 0)
+    const totalSpent = Object.values(budgetSnapshot.spent).reduce((s, v) => s + v, 0)
+    return `Месяц ${budgetSnapshot.month}: всего запланировано ${amount(totalPlanned)}, всего потрачено ${amount(totalSpent)}.\n${lines.join('\n')}`
+  }, [budgetSnapshot])
 
   // Build financial context summary for Claude
   const buildContext = useCallback(() => {
@@ -381,6 +427,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
     const plannedText = plannedOps.length
       ? plannedOps.slice(0, 8).map(op => `${op.date}: ${op.type === 'income' ? '+' : '-'}${amount(op.amount || 0)} ${op.category || op.description}`).join('; ')
       : 'none'
+    const budgetText = formatBudgetText(amount)
 
     if (lang === 'ru') {
       return `Отвечай на русском языке. Валюта всех сумм: казахстанский тенге (₸).
@@ -392,7 +439,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
 Главные категории расходов: ${topCategoryText}
 Количество транзакций за месяц: ${thisMonth.length}
 Плановые операции на 60 дней: доходы ${amount(planned.income)}, расходы ${amount(planned.expense)}, чистый план ${amount(planned.net)}. Список: ${plannedText}
-Счета: ${accountText}`
+Счета: ${accountText}${budgetText ? `\nБюджет (envelope-budgeting):\n${budgetText}` : ''}`
     }
 
     if (lang === 'kz') {
@@ -405,7 +452,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
 Негізгі шығыс санаттары: ${topCategoryText}
 Осы айдағы транзакциялар саны: ${thisMonth.length}
 Плановые операции на 60 дней: доходы ${amount(planned.income)}, расходы ${amount(planned.expense)}, чистый план ${amount(planned.net)}. Список: ${plannedText}
-Шоттар: ${accountText}`
+Шоттар: ${accountText}${budgetText ? `\nБюджет (envelope):\n${budgetText}` : ''}`
     }
 
     return `Answer in English. Currency for all amounts: Kazakhstani tenge (₸).
@@ -417,8 +464,8 @@ Savings rate: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0
 Top expense categories: ${topCategoryText}
 Total transactions this month: ${thisMonth.length}
 Planned operations for 60 days: income ${amount(planned.income)}, expenses ${amount(planned.expense)}, net plan ${amount(planned.net)}. List: ${plannedText}
-Accounts: ${accountText}`
-  }, [txs, accounts, plannedOps, lang])
+Accounts: ${accountText}${budgetText ? `\nEnvelope budget:\n${budgetText}` : ''}`
+  }, [txs, accounts, plannedOps, lang, formatBudgetText])
 
   const sendMessage = async (text) => {
     const msg = text || input.trim()

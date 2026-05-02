@@ -5,8 +5,9 @@
 // inline edit/delete, "add category" form.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useBudget, currentMonthKey, shiftMonth } from '../../hooks/useBudget'
+import { generateBudgetProposal, applyBudgetProposal } from '../../lib/budgetAI'
 
 const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
 
@@ -398,6 +399,8 @@ function buildDemoState({ demoData, month }) {
 export default function BudgetView({ userId, demo, demoData }) {
   const [month, setMonth] = useState(currentMonthKey())
   const [editing, setEditing] = useState(null)
+  const [showAIProposal, setShowAIProposal] = useState(false)
+  const [appliedToast, setAppliedToast] = useState(null)
   const live = useBudget(month, { userId: demo ? null : userId })
 
   // In demo mode, compute everything locally from demoData
@@ -435,31 +438,43 @@ export default function BudgetView({ userId, demo, demoData }) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
 
         {/* ── Header: month switcher + label ── */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div>
             <h2 className="text-white font-semibold text-lg sm:text-xl">Бюджет</h2>
             <p className="text-white/40 text-xs sm:text-sm mt-0.5">
               Сколько ещё можно потратить из запланированного
             </p>
           </div>
-          <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
-            <button
-              onClick={() => setMonth(shiftMonth(month, -1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-              aria-label="Предыдущий месяц"
-            >
-              ‹
-            </button>
-            <span className="text-white/85 font-medium text-xs sm:text-sm px-3 min-w-[110px] text-center">
-              {formatMonthLabel(month)}
-            </span>
-            <button
-              onClick={() => setMonth(shiftMonth(month, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-              aria-label="Следующий месяц"
-            >
-              ›
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {!isDemo && (
+              <button
+                onClick={() => setShowAIProposal(true)}
+                className="flex items-center gap-1.5 bg-mint/15 hover:bg-mint/25 border border-mint/30 text-mint text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                title="Сгенерировать бюджет на основе истории"
+              >
+                <span className="text-base leading-none">✦</span>
+                <span>AI-бюджет</span>
+              </button>
+            )}
+            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+              <button
+                onClick={() => setMonth(shiftMonth(month, -1))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                aria-label="Предыдущий месяц"
+              >
+                ‹
+              </button>
+              <span className="text-white/85 font-medium text-xs sm:text-sm px-3 min-w-[110px] text-center">
+                {formatMonthLabel(month)}
+              </span>
+              <button
+                onClick={() => setMonth(shiftMonth(month, 1))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                aria-label="Следующий месяц"
+              >
+                ›
+              </button>
+            </div>
           </div>
         </div>
 
@@ -574,6 +589,225 @@ export default function BudgetView({ userId, demo, demoData }) {
             onClose={() => setEditing(null)}
             onSave={save}
           />
+        )}
+
+        {/* ── AI proposal modal ── */}
+        {showAIProposal && (
+          <AIProposalModal
+            userId={userId}
+            targetMonth={month}
+            knownCategories={existingCategories}
+            onClose={() => setShowAIProposal(false)}
+            onApplied={(count) => {
+              setAppliedToast(`Применено ${count} ${count === 1 ? 'категория' : 'категорий'}`)
+              setTimeout(() => setAppliedToast(null), 4000)
+              if (typeof live?.reload === 'function') live.reload()
+            }}
+          />
+        )}
+
+        {/* ── Toast ── */}
+        {appliedToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-mint text-white font-semibold text-sm px-5 py-2.5 rounded-full shadow-2xl z-50 flex items-center gap-2">
+            <span>✓</span> {appliedToast}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── AI Budget Proposal Modal ────────────────────────────────────────────────
+function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onApplied }) {
+  const [step, setStep] = useState('loading') // 'loading' | 'review' | 'applying' | 'error'
+  const [proposal, setProposal] = useState(null)
+  const [error, setError] = useState('')
+  const [selected, setSelected] = useState(new Set()) // categories user wants to apply
+  const [overrides, setOverrides] = useState({}) // category -> custom planned amount
+
+  // Trigger generation on mount
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const res = await generateBudgetProposal({ userId, targetMonth, knownCategories })
+      if (cancelled) return
+      if (res.error) {
+        setError(res.error)
+        setStep('error')
+        return
+      }
+      setProposal(res)
+      setSelected(new Set(res.items.map((i) => i.category)))
+      setStep('review')
+    })()
+    return () => { cancelled = true }
+  }, [userId, targetMonth])
+
+  const toggle = (cat) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
+
+  const handleApply = async () => {
+    if (!proposal) return
+    const items = proposal.items
+      .filter((it) => selected.has(it.category))
+      .map((it) => ({
+        category: it.category,
+        planned: overrides[it.category] !== undefined ? Number(overrides[it.category]) : it.planned,
+        note: it.note,
+      }))
+    if (items.length === 0) {
+      setError('Выберите хотя бы одну категорию')
+      return
+    }
+    setStep('applying')
+    setError('')
+    const res = await applyBudgetProposal({ userId, month: targetMonth, items })
+    if (res.error) {
+      setError(res.error)
+      setStep('review')
+      return
+    }
+    onApplied?.(res.applied)
+    onClose()
+  }
+
+  const totalSelected = proposal
+    ? proposal.items
+        .filter((it) => selected.has(it.category))
+        .reduce((s, it) => s + (overrides[it.category] !== undefined ? Number(overrides[it.category]) : it.planned), 0)
+    : 0
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-[#161616] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
+          <div>
+            <h3 className="text-white font-semibold text-sm">✦ AI-генератор бюджета</h3>
+            <p className="text-white/40 text-xs mt-0.5">
+              На основе истории расходов за последние 3 месяца
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white text-sm"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {step === 'loading' && (
+            <div className="text-center py-12">
+              <div className="w-8 h-8 border-2 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-white/60 text-sm">Анализирую вашу историю расходов…</p>
+              <p className="text-white/30 text-xs mt-1">Это займёт ~10 секунд</p>
+            </div>
+          )}
+
+          {step === 'error' && (
+            <div className="text-center py-10">
+              <p className="text-red-400 text-sm font-semibold mb-2">Не удалось сгенерировать бюджет</p>
+              <p className="text-white/50 text-xs">{error}</p>
+            </div>
+          )}
+
+          {step === 'review' && proposal && (
+            <div>
+              {proposal.fromFallback && (
+                <div className="bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-lg px-3 py-2 text-xs mb-3">
+                  AI вернул некорректный ответ — использовано усреднение по истории.
+                </div>
+              )}
+              <p className="text-white/50 text-xs mb-3">
+                Анализ по месяцам: {proposal.monthsAnalyzed.join(', ')}.<br/>
+                Снимите галочки с тех категорий, которые не хотите включать.
+              </p>
+              <div className="space-y-1.5">
+                {proposal.items.map((item) => {
+                  const isSel = selected.has(item.category)
+                  const customVal = overrides[item.category]
+                  const finalAmount = customVal !== undefined ? Number(customVal) : item.planned
+                  return (
+                    <label
+                      key={item.category}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        isSel
+                          ? 'bg-white/[0.04] border-white/10 hover:bg-white/[0.06]'
+                          : 'bg-white/[0.01] border-white/5 opacity-50 hover:opacity-75'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSel}
+                        onChange={() => toggle(item.category)}
+                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-mint focus:ring-mint/30 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white/90 text-sm font-medium truncate">{item.category}</p>
+                        <p className="text-white/40 text-[11px] mt-0.5 truncate">
+                          {item.note ? `${item.note} · ` : ''}среднее за 3 мес: {Math.round(item.prevAvg).toLocaleString('ru-RU')} ₸
+                        </p>
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={customVal !== undefined ? customVal : item.planned}
+                        onChange={(e) => setOverrides((prev) => ({ ...prev, [item.category]: e.target.value.replace(/[^\d]/g, '') }))}
+                        onClick={(e) => e.stopPropagation()}
+                        disabled={!isSel}
+                        className="w-24 sm:w-28 bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-sm text-white text-right tabular-nums disabled:opacity-40 focus:outline-none focus:border-mint/40"
+                      />
+                      <span className="text-white/40 text-xs flex-shrink-0">₸</span>
+                    </label>
+                  )
+                })}
+              </div>
+              {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+            </div>
+          )}
+
+          {step === 'applying' && (
+            <div className="text-center py-12">
+              <div className="w-6 h-6 border-2 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-white/60 text-sm">Применяю бюджет…</p>
+            </div>
+          )}
+        </div>
+
+        {(step === 'review' || step === 'error') && (
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-white/5 flex-shrink-0">
+            <p className="text-white/60 text-xs">
+              {step === 'review' && proposal && (
+                <>Выбрано: {selected.size} из {proposal.items.length} · Сумма: <span className="text-white font-semibold">{Math.round(totalSelected).toLocaleString('ru-RU')} ₸</span></>
+              )}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onClose}
+                className="text-white/50 hover:text-white text-sm px-3 py-2"
+              >
+                Отмена
+              </button>
+              {step === 'review' && (
+                <button
+                  onClick={handleApply}
+                  disabled={selected.size === 0}
+                  className="bg-mint hover:bg-mint/90 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-colors"
+                >
+                  Применить ({selected.size})
+                </button>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
