@@ -1,9 +1,17 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
 import { parseKaspiStatement, computeStatistics } from '../../utils/kaspiParser'
 import { matchCategory, computeRecommendations, bestCardForCategory, CB_CAT_LABELS_RU } from '../../data/bankCashbacks'
 import { useLiveCashbacks } from '../../hooks/useLiveCashbacks'
 
 const fmt = (n) => Math.round(n).toLocaleString('ru-RU')
+
+const txIdentity = (tx) => [
+  tx.date || '',
+  tx.type || '',
+  Math.round(Math.abs(tx.amount || 0) * 100) / 100,
+  String(tx.description || '').trim().toLowerCase(),
+].join('|')
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 0 — File upload
@@ -130,7 +138,7 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 1 — Statistics overview
 // ─────────────────────────────────────────────────────────────────────────────
-function StepStats({ stats, fileName, onCashback, onBack }) {
+function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
   const { banks } = useLiveCashbacks()
   const {
     totalExpense, totalIncome, netFlow, transactionCount,
@@ -277,13 +285,17 @@ function StepStats({ stats, fileName, onCashback, onBack }) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button onClick={onBack}
-          className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
+          className="py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
           ← Загрузить другой
         </button>
+        <button onClick={onSave}
+          className="py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white/70 hover:bg-white/[0.1] hover:text-white font-bold text-sm transition-colors">
+          Сохранить операции
+        </button>
         <button onClick={onCashback}
-          className="flex-[2] py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-all shadow-[0_0_20px_rgba(79,142,247,0.25)] flex items-center justify-center gap-1.5">
+          className="py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-all shadow-[0_0_20px_rgba(79,142,247,0.25)] flex items-center justify-center gap-1.5">
           <span>💳</span> Подобрать лучший кэшбэк →
         </button>
       </div>
@@ -292,7 +304,246 @@ function StepStats({ stats, fileName, onCashback, onBack }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 2 — Cashback recommendations (reuses logic from CashbackReportModal)
+// Step 2 — Save imported transactions
+// ─────────────────────────────────────────────────────────────────────────────
+function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
+  const [accounts, setAccounts] = useState([])
+  const [selectedAccountId, setSelectedAccountId] = useState('')
+  const [existingKeys, setExistingKeys] = useState(new Set())
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [saveResult, setSaveResult] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadContext = async () => {
+      setLoading(true)
+      setError(null)
+
+      if (demo || !userId) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      const [{ data: accountRows, error: accountsError }, { data: existingRows, error: txError }] = await Promise.all([
+        supabase
+          .from('accounts')
+          .select('id,name,balance,currency,type')
+          .eq('user_id', userId)
+          .order('name'),
+        supabase
+          .from('transactions')
+          .select('date,type,amount,description')
+          .eq('user_id', userId)
+          .gte('date', parsed.stats.dateFrom)
+          .lte('date', `${parsed.stats.dateTo}T23:59:59`),
+      ])
+
+      if (cancelled) return
+
+      if (accountsError || txError) {
+        setError(accountsError?.message || txError?.message || 'Не удалось проверить импорт')
+      }
+
+      const rows = accountRows || []
+      setAccounts(rows)
+      setSelectedAccountId(rows[0]?.id || '')
+      setExistingKeys(new Set((existingRows || []).map(txIdentity)))
+      setLoading(false)
+    }
+
+    loadContext()
+    return () => { cancelled = true }
+  }, [demo, parsed.stats.dateFrom, parsed.stats.dateTo, userId])
+
+  const prepared = parsed.transactions.map(tx => ({
+    ...tx,
+    duplicate: existingKeys.has(txIdentity(tx)),
+  }))
+  const newRows = prepared.filter(tx => !tx.duplicate)
+  const duplicateCount = prepared.length - newRows.length
+  const selectedAccount = accounts.find(account => account.id === selectedAccountId)
+
+  const handleSave = async () => {
+    if (demo) return
+    if (!selectedAccountId) {
+      setError('Сначала выберите счет для импорта')
+      return
+    }
+    if (newRows.length === 0) {
+      setSaveResult({ imported: 0, skipped: duplicateCount })
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    const rows = newRows.map(tx => ({
+      user_id: userId,
+      type: tx.type,
+      amount: Math.abs(tx.amount || 0),
+      description: tx.description || 'Импорт выписки',
+      accountId: selectedAccountId,
+      date: tx.date,
+      category: tx.category || null,
+      comment: `Импорт: ${parsed.fileName}`,
+    }))
+
+    const { error: insertError } = await supabase
+      .from('transactions')
+      .insert(rows)
+
+    if (insertError) {
+      setError(insertError.message || 'Не удалось сохранить транзакции')
+      setSaving(false)
+      return
+    }
+
+    const netDelta = rows.reduce((sum, tx) => (
+      tx.type === 'income' ? sum + tx.amount : sum - tx.amount
+    ), 0)
+
+    if (selectedAccount) {
+      await supabase
+        .from('accounts')
+        .update({ balance: Number(selectedAccount.balance || 0) + netDelta })
+        .eq('id', selectedAccountId)
+    }
+
+    setSaveResult({ imported: rows.length, skipped: duplicateCount })
+    setExistingKeys(new Set(prepared.map(txIdentity)))
+    setSaving(false)
+    onImported?.()
+  }
+
+  if (demo) {
+    return (
+      <div>
+        <h3 className="text-white font-bold text-base mb-2">Сохранение в демо-режиме</h3>
+        <div className="bg-[#4F8EF7]/10 border border-[#4F8EF7]/20 rounded-2xl p-4 mb-4">
+          <p className="text-white/70 text-sm">
+            В демо-режиме импорт можно разобрать и проанализировать, но сохранять операции в базу нельзя. В реальном аккаунте здесь появится выбор счета, проверка дублей и запись в транзакции.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onBack}
+            className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
+            ← Статистика
+          </button>
+          <button onClick={onCashback}
+            className="flex-1 py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-colors">
+            Кэшбэк →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="text-white font-bold text-base">Сохранить импорт</h3>
+        <p className="text-white/30 text-xs mt-1">
+          Выберите счет, проверьте найденные дубли и добавьте операции в общий финансовый слой.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center h-40">
+          <div className="w-7 h-7 border-2 border-[#4F8EF7] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
+
+          <label className="block mb-4">
+            <span className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">Счет для операций</span>
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-[#4F8EF7]/50"
+            >
+              {accounts.length === 0 && <option value="">Нет счетов</option>}
+              {accounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.name} · {account.currency || 'KZT'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+              <p className="text-white/30 text-[10px] mb-1">Найдено</p>
+              <p className="text-white text-lg font-black">{prepared.length}</p>
+            </div>
+            <div className="bg-[#4F8EF7]/5 border border-[#4F8EF7]/10 rounded-xl p-3">
+              <p className="text-white/30 text-[10px] mb-1">Новые</p>
+              <p className="text-[#4F8EF7] text-lg font-black">{newRows.length}</p>
+            </div>
+            <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3">
+              <p className="text-white/30 text-[10px] mb-1">Дубли</p>
+              <p className="text-amber-300 text-lg font-black">{duplicateCount}</p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1 mb-4">
+            {prepared.slice(0, 12).map((tx, index) => (
+              <div key={`${tx.date}-${index}`} className="grid grid-cols-[82px_1fr_86px] gap-3 items-center bg-white/[0.03] border border-white/[0.05] rounded-xl px-3 py-2">
+                <div>
+                  <p className="text-white/45 text-[10px]">{tx.date}</p>
+                  <p className={`text-[10px] font-bold ${tx.type === 'income' ? 'text-emerald-300' : 'text-red-300'}`}>
+                    {tx.type === 'income' ? 'Доход' : 'Расход'}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white/70 text-xs font-semibold truncate">{tx.description || tx.category || 'Операция'}</p>
+                  <p className="text-white/30 text-[10px] truncate">{tx.category || 'Без категории'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/70 text-xs font-bold">{fmt(Math.abs(tx.amount || 0))} ₸</p>
+                  {tx.duplicate && <p className="text-amber-300 text-[9px] font-bold">дубль</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {saveResult && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-4">
+              <p className="text-emerald-300 text-sm font-semibold">
+                Сохранено: {saveResult.imported}. Пропущено дублей: {saveResult.skipped}.
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button onClick={onBack}
+              className="py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
+              ← Статистика
+            </button>
+            <button onClick={handleSave} disabled={saving || !selectedAccountId || newRows.length === 0}
+              className="py-3 rounded-xl bg-[#4F8EF7] disabled:bg-white/[0.06] disabled:text-white/20 text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-colors">
+              {saving ? 'Сохраняем...' : `Сохранить ${newRows.length}`}
+            </button>
+            <button onClick={onCashback}
+              className="py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white/70 hover:bg-white/[0.1] hover:text-white font-bold text-sm transition-colors">
+              Кэшбэк →
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 3 — Cashback recommendations (reuses logic from CashbackReportModal)
 // ─────────────────────────────────────────────────────────────────────────────
 function StepCashback({ stats, onBack }) {
   const [expandedCard, setExpandedCard] = useState(null)
@@ -584,7 +835,7 @@ function StepCashback({ stats, onBack }) {
 // Step indicator
 // ─────────────────────────────────────────────────────────────────────────────
 function StepIndicator({ step }) {
-  const steps = ['Загрузка', 'Статистика', 'Кэшбэк']
+  const steps = ['Загрузка', 'Статистика', 'Сохранение', 'Кэшбэк']
   return (
     <div className="flex items-center gap-1 mb-5">
       {steps.map((label, i) => (
@@ -601,7 +852,7 @@ function StepIndicator({ step }) {
             </span>
             {label}
           </div>
-          {i < 2 && <div className={`w-4 h-px ${step > i ? 'bg-[#4F8EF7]/30' : 'bg-white/10'}`} />}
+          {i < steps.length - 1 && <div className={`w-4 h-px ${step > i ? 'bg-[#4F8EF7]/30' : 'bg-white/10'}`} />}
         </div>
       ))}
     </div>
@@ -611,7 +862,7 @@ function StepIndicator({ step }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Main modal
 // ─────────────────────────────────────────────────────────────────────────────
-export default function ImportStatementModal({ onClose }) {
+export default function ImportStatementModal({ userId, demo = false, onImported, onClose }) {
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -625,7 +876,7 @@ export default function ImportStatementModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#131313] border border-white/[0.08] rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl max-h-[92vh] flex flex-col">
+      <div className="relative bg-[#131313] border border-white/[0.08] rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl shadow-2xl max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-4">
@@ -661,11 +912,22 @@ export default function ImportStatementModal({ onClose }) {
             <StepStats
               stats={parsed.stats}
               fileName={parsed.fileName}
-              onCashback={() => setStep(2)}
+              onCashback={() => setStep(3)}
+              onSave={() => setStep(2)}
               onBack={() => { setParsed(null); setStep(0) }}
             />
           )}
           {step === 2 && parsed && (
+            <StepSave
+              parsed={parsed}
+              userId={userId}
+              demo={demo}
+              onImported={onImported}
+              onCashback={() => setStep(3)}
+              onBack={() => setStep(1)}
+            />
+          )}
+          {step === 3 && parsed && (
             <StepCashback
               stats={parsed.stats}
               onBack={() => setStep(1)}

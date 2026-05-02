@@ -18,20 +18,12 @@ import AddAccountModal from './dashboard/AddAccountModal'
 import OnboardingSurvey from './dashboard/OnboardingSurvey'
 import TaxWidget from './dashboard/TaxWidget'
 import PayrollCalculator from './dashboard/PayrollCalculator'
-
-const Logo = () => (
-  <div className="flex items-center gap-2">
-    <div className="w-8 h-8 rounded-full bg-[#4F8EF7] flex items-center justify-center">
-      <span className="text-white font-black text-[10px] leading-none">fv</span>
-    </div>
-    <span className="text-white font-bold text-base tracking-tight">finvy</span>
-  </div>
-)
+import BrandLogo from '../components/BrandLogo'
 
 function ToolPage({ title, subtitle, children }) {
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-6 py-6">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
         <div className="mb-5">
           <h2 className="text-white font-semibold text-base">{title}</h2>
           {subtitle && <p className="text-white/30 text-xs mt-1">{subtitle}</p>}
@@ -103,6 +95,7 @@ function DashboardInner({ demo }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const profileMenuRef = useRef(null)
+  const tabsScrollRef = useRef(null)
 
   const currentTab = location.pathname.includes('ai') ? 'ai'
     : location.pathname.includes('analytics') ? 'analytics'
@@ -181,18 +174,17 @@ function DashboardInner({ demo }) {
     { key: 'calendar',    label: t.calendar,       path: `${base}/calendar` },
     { key: 'invoices',    label: t.invoices,       path: `${base}/invoices` },
     { key: 'reports',     label: t.reports,        path: `${base}/reports` },
-    ...(profileType === 'business'
-      ? [
-          { key: 'taxes', label: t.taxes || 'Налоги', path: `${base}/taxes` },
-          { key: 'payroll', label: t.payroll || 'Зарплата', path: `${base}/payroll` },
-        ]
-      : []),
+    { key: 'taxes',       label: t.taxes || 'Налоги', path: `${base}/taxes` },
+    { key: 'payroll',     label: 'З/п',               path: `${base}/payroll` },
     { key: 'categories',  label: t.categories,     path: `${base}/categories` },
     { key: 'users',       label: t.users,          path: `${base}/users` },
     { key: 'settings',    label: t.settings,       path: `${base}/settings` },
   ]
 
   const currencySymbol = (c) => ({ USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }[c] || c)
+  const scrollTabs = (direction) => {
+    tabsScrollRef.current?.scrollBy({ left: direction * 220, behavior: 'smooth' })
+  }
 
   return (
     <div className="flex h-screen bg-[#111] text-white overflow-hidden">
@@ -207,13 +199,13 @@ function DashboardInner({ demo }) {
       {/* ── Sidebar ── */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-40
-        w-56 flex-shrink-0 bg-[#0f0f0f] border-r border-white/5 flex flex-col
+        w-[86vw] max-w-xs lg:w-56 flex-shrink-0 bg-[#0f0f0f] border-r border-white/5 flex flex-col
         transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo */}
         <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-          <Logo />
+          <BrandLogo textClassName="text-white text-base" />
           <div ref={profileMenuRef} className="relative">
             <button
               onClick={() => setShowProfileMenu(o => !o)}
@@ -325,54 +317,70 @@ function DashboardInner({ demo }) {
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-white/5 bg-[#111] flex-shrink-0 gap-2">
-          {/* Hamburger (mobile only) */}
-          <button
-            onClick={() => setSidebarOpen(o => !o)}
-            className="lg:hidden flex-shrink-0 flex flex-col gap-1 p-1"
-            aria-label="Toggle sidebar"
-          >
-            <span className="w-5 h-0.5 bg-white/70 block" />
-            <span className="w-5 h-0.5 bg-white/70 block" />
-            <span className="w-5 h-0.5 bg-white/70 block" />
-          </button>
+        <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-6 py-2.5 lg:py-3 border-b border-white/5 bg-[#111] flex-shrink-0 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Hamburger (mobile only) */}
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              className="lg:hidden flex-shrink-0 flex flex-col gap-1 p-2 -ml-1 rounded-lg hover:bg-white/5"
+              aria-label="Toggle sidebar"
+            >
+              <span className="w-5 h-0.5 bg-white/70 block" />
+              <span className="w-5 h-0.5 bg-white/70 block" />
+              <span className="w-5 h-0.5 bg-white/70 block" />
+            </button>
 
-          {/* Tabs — scrollable on mobile */}
-          <div className="flex items-center gap-1 overflow-x-auto flex-1 scrollbar-none">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => { navigate(tab.path); setSidebarOpen(false) }}
-                className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                  tab.key === 'ai'
-                    ? currentTab === 'ai'
-                      ? 'bg-[#4F8EF7]/20 text-[#4F8EF7] border border-[#4F8EF7]/30'
-                      : 'text-[#4F8EF7]/50 hover:text-[#4F8EF7]/80 border border-[#4F8EF7]/10 hover:border-[#4F8EF7]/30'
-                    : currentTab === tab.key
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/40 hover:text-white/70'
-                }`}
+            {/* Tabs — horizontally scrollable */}
+            <div className="relative flex-1 min-w-0">
+              <div
+                ref={tabsScrollRef}
+                className="flex items-center gap-1 overflow-x-auto scroll-smooth pr-16 min-w-0 scrollbar-none"
               >
-                {tab.label}
+                {tabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => { navigate(tab.path); setSidebarOpen(false) }}
+                    className={`flex-shrink-0 px-2 sm:px-2.5 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-colors ${
+                      tab.key === 'ai'
+                        ? currentTab === 'ai'
+                          ? 'bg-[#4F8EF7]/20 text-[#4F8EF7] border border-[#4F8EF7]/30'
+                          : 'text-[#4F8EF7]/50 hover:text-[#4F8EF7]/80 border border-[#4F8EF7]/10 hover:border-[#4F8EF7]/30'
+                        : currentTab === tab.key
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#111] to-transparent" />
+              <button
+                type="button"
+                onClick={() => scrollTabs(1)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-lg border border-white/10 bg-[#1a1a1a] text-white/60 hover:text-white hover:border-white/20 transition-colors"
+                aria-label="Scroll tabs right"
+              >
+                →
               </button>
-            ))}
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none min-w-0 pb-0.5 lg:pb-0">
             <button onClick={() => setShowAddModal('income')}
-              className="bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-mint/90 transition-colors">
-              <span className="text-base leading-none">+</span> {t.income}
+              className="flex-shrink-0 bg-mint text-dark text-xs font-bold px-3 sm:px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-mint/90 transition-colors">
+              <span className="text-base leading-none">+</span> <span className="whitespace-nowrap">{t.income}</span>
             </button>
             <button onClick={() => setShowAddModal('expense')}
-              className="bg-red-500/80 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-red-500 transition-colors">
-              <span className="text-base leading-none">−</span> {t.expense}
+              className="flex-shrink-0 bg-red-500/80 text-white text-xs font-bold px-3 sm:px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-red-500 transition-colors">
+              <span className="text-base leading-none">−</span> <span className="whitespace-nowrap">{t.expense}</span>
             </button>
             <button onClick={() => setShowAddModal('transfer')}
-              className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/15 transition-colors">
+              className="flex-shrink-0 bg-white/10 text-white text-xs font-bold px-3 sm:px-4 py-2 rounded-lg hover:bg-white/15 transition-colors whitespace-nowrap">
               ⇄ {t.transfer}
             </button>
-            <div className="w-px h-6 bg-white/10 mx-1" />
+            <div className="w-px h-6 bg-white/10 mx-1 flex-shrink-0" />
             {/* Language switcher */}
             <LangSwitcher />
           </div>
@@ -382,6 +390,7 @@ function DashboardInner({ demo }) {
         <main className="flex-1 overflow-hidden">
           <Routes>
             <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
+            <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="calendar" element={<CalendarView userId={user.id} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
             <Route path="users" element={<UsersView />} />
@@ -395,7 +404,7 @@ function DashboardInner({ demo }) {
             } />
             <Route path="payroll" element={
               <ToolPage title={t.payroll || 'Зарплата'} subtitle={t.payrollSubtitle || 'Калькулятор начислений, удержаний и полной стоимости сотрудника'}>
-                <PayrollCalculator currency={defaultCurrency} />
+                <PayrollCalculator userId={user.id} currency={defaultCurrency} onPlannedChange={() => setRefreshKey(k => k + 1)} />
               </ToolPage>
             } />
             <Route path="settings" element={<SettingsView userId={user.id} onSave={loadSettings} demo={demo} />} />

@@ -1,14 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLanguage, LANGS, useLanding } from '../context/LanguageContext'
-
-const Logo = () => (
-  <div className="flex items-center gap-2">
-    <div className="w-8 h-8 rounded-full bg-[#4F8EF7] flex items-center justify-center">
-      <span className="text-white font-black text-[10px] leading-none">fv</span>
-    </div>
-    <span className="text-[#4F8EF7] font-bold text-lg tracking-tight">Finvy</span>
-  </div>
-)
+import BrandLogo from './BrandLogo'
 
 function LangDropdown({ inMenu = false }) {
   const { lang, changeLang } = useLanguage()
@@ -115,7 +107,7 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
               )}
             </button>
             <span className="text-white/50 text-sm hidden lg:block">{lt.menu}</span>
-            <Logo />
+            <BrandLogo />
           </div>
 
           {/* Center: nav links (desktop) */}

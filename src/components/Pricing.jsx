@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLanding, useLanguage } from '../context/LanguageContext'
+import { IconCheck } from './Icons'
 
 export default function Pricing({ onOpenModal }) {
   const lt = useLanding()
@@ -27,37 +28,39 @@ export default function Pricing({ onOpenModal }) {
   ]
 
   return (
-    <section id="pricing" className="bg-mint-bg grid-bg-light py-20 px-4">
+    <section id="pricing" className="bg-mint-bg grid-bg-light py-14 sm:py-20 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl lg:text-5xl font-black text-[#24272b] mb-4">{lt.pricingTitle}</h2>
+        <div className="text-center mb-10 sm:mb-12">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#24272b] mb-4">{lt.pricingTitle}</h2>
           <p className="text-[#24272b]/60 mb-8 whitespace-pre-line">{lt.pricingSub}</p>
 
           {/* Period toggle */}
-          <div className="inline-flex bg-white/60 rounded-2xl p-1 gap-1">
-            {periodOpts.map(opt => (
-              <button
-                key={opt.key}
-                onClick={() => setPeriod(opt.key)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
-                  period === opt.key
-                    ? 'bg-[#24272b] text-white shadow-sm'
-                    : 'text-[#24272b]/60 hover:text-[#24272b]'
-                }`}
-              >
-                {opt.label}
-                {opt.badge && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${period === opt.key ? 'bg-mint/30 text-mint' : 'bg-[#24272b]/10'}`}>
-                    {opt.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="overflow-x-auto scrollbar-none">
+            <div className="inline-flex min-w-max bg-white/60 rounded-2xl p-1 gap-1">
+              {periodOpts.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setPeriod(opt.key)}
+                  className={`flex-shrink-0 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+                    period === opt.key
+                      ? 'bg-[#24272b] text-white shadow-sm'
+                      : 'text-[#24272b]/60 hover:text-[#24272b]'
+                  }`}
+                >
+                  {opt.label}
+                  {opt.badge && (
+                    <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full ${period === opt.key ? 'bg-mint/30 text-mint' : 'bg-[#24272b]/10'}`}>
+                      {opt.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12">
           {lt.plans.map((plan, i) => (
             <div
               key={i}
@@ -81,8 +84,8 @@ export default function Pricing({ onOpenModal }) {
               <ul className="space-y-2 mb-6 flex-1">
                 {plan.features.map((f, j) => (
                   <li key={j} className="flex items-start gap-2 text-xs text-[#24272b]/70">
-                    <span className="text-mint mt-0.5">✓</span>
-                    {f}
+                    <IconCheck className="h-3.5 w-3.5 text-mint mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
                   </li>
                 ))}
               </ul>

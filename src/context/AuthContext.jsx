@@ -23,8 +23,16 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const getAuthRedirectUrl = () => `${window.location.origin}/dashboard`
+
   const signUp = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: getAuthRedirectUrl(),
+      },
+    })
     return { data, error }
   }
 
@@ -37,7 +45,7 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: getAuthRedirectUrl(),
         queryParams: { prompt: 'select_account' },
       }
     })

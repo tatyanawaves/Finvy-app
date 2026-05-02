@@ -56,7 +56,7 @@ export default function AppDemo() {
   ]
 
   return (
-    <section className="bg-[#24272b] grid-bg py-16 px-4">
+    <section className="bg-[#24272b] grid-bg py-14 sm:py-16 px-4">
       <div className="max-w-6xl mx-auto">
 
         {/* Section title */}
@@ -73,7 +73,7 @@ export default function AppDemo() {
         <div className="md:hidden rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#24272b]">
 
           {/* App top bar */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#24272b] border-b border-white/10">
+          <div className="flex flex-col gap-3 px-4 py-3 bg-[#24272b] border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-mint flex items-center justify-center flex-shrink-0">
                 <span className="text-[#24272b] font-black text-[10px]">fv</span>
@@ -83,14 +83,14 @@ export default function AppDemo() {
                 <p className="text-white/40 text-[10px]">{lt.appDemoBusiness ?? 'Бизнес'} ▾</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="bg-mint text-[#24272b] text-[11px] font-bold px-3 py-1.5 rounded-lg">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              <button className="flex-shrink-0 bg-mint text-[#24272b] text-[11px] font-bold px-3 py-1.5 rounded-lg">
                 {lt.appDemoIncome ?? '+ Доход'}
               </button>
-              <button className="bg-red-500/80 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">
+              <button className="flex-shrink-0 bg-red-500/80 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">
                 {lt.appDemoExpense ?? '− Расход'}
               </button>
-              <button className="bg-white/10 text-white text-[11px] font-bold px-2 py-1.5 rounded-lg">
+              <button className="flex-shrink-0 bg-white/10 text-white text-[11px] font-bold px-2 py-1.5 rounded-lg">
                 ⇄
               </button>
             </div>
@@ -109,14 +109,14 @@ export default function AppDemo() {
           </div>
 
           {/* Balance summary */}
-          <div className="px-4 py-3 bg-[#24272b] border-b border-white/10 flex items-center justify-between">
+          <div className="px-4 py-3 bg-[#24272b] border-b border-white/10 flex flex-col gap-3">
             <div>
               <p className="text-white/40 text-[10px]">{lt.appDemoTotal ?? 'Итого на счетах'}</p>
               <p className="text-white text-lg font-bold">₸ 5 412 000</p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-2 overflow-x-auto scrollbar-none">
               {accounts.slice(0, 3).map((acc, i) => (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-center">
+                <div key={i} className="min-w-[96px] bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-center">
                   <p className="text-white/60 text-[9px] truncate max-w-[60px]">{acc.name}</p>
                   <p className="text-white/80 text-[10px] font-semibold">{acc.balance.replace('₸ ', '')}</p>
                 </div>

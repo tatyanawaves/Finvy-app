@@ -47,7 +47,7 @@ function CategoryModal({ userId, category, onClose, onSaved, t }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#161616] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
+      <div className="relative max-h-[92vh] overflow-y-auto bg-[#161616] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <h3 className="text-white font-semibold text-sm">{category?.id ? t.editCategory : t.addCategory}</h3>
           <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white">✕</button>
@@ -62,7 +62,7 @@ function CategoryModal({ userId, category, onClose, onSaved, t }) {
           {/* Type */}
           <div>
             <label className="text-white/40 text-xs mb-1.5 block">{t.categoryType}</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {['income','expense','both'].map(type => (
                 <button key={type} type="button" onClick={() => set('type', type)}
                   className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
@@ -81,7 +81,7 @@ function CategoryModal({ userId, category, onClose, onSaved, t }) {
           {/* Icon */}
           <div>
             <label className="text-white/40 text-xs mb-1.5 block">{t.categoryIcon}</label>
-            <div className="grid grid-cols-10 gap-1">
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-1">
               {ICONS.map(icon => (
                 <button key={icon} type="button" onClick={() => set('icon', icon)}
                   className={`w-8 h-8 rounded-lg text-base flex items-center justify-center transition-colors ${
@@ -159,19 +159,19 @@ export default function CategoriesView({ userId }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-6 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-white font-semibold text-base">{t.categories}</h2>
             <p className="text-white/30 text-xs mt-0.5">{categories.length} {t.categories.toLowerCase()}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {/* Type filter */}
-            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 overflow-x-auto scrollbar-none">
               {['all','income','expense'].map(type => (
                 <button key={type} onClick={() => setTypeFilter(type)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  className={`flex-shrink-0 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     typeFilter === type ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
                   }`}>
                   {type === 'all' ? t.all : type === 'income' ? t.incomeCategories : t.expenseCategories}
@@ -179,7 +179,7 @@ export default function CategoriesView({ userId }) {
               ))}
             </div>
             <button onClick={() => { setEditing(null); setShowModal(true) }}
-              className="bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
+              className="w-full sm:w-auto justify-center bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
               <span className="text-base leading-none">+</span> {t.addCategory}
             </button>
           </div>
@@ -204,7 +204,7 @@ export default function CategoriesView({ userId }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-mint inline-block" />
                   {t.incomeCategories} · {grouped.income.length}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {grouped.income.map(cat => (
                     <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id)} t={t} />
                   ))}
@@ -218,7 +218,7 @@ export default function CategoriesView({ userId }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
                   {t.expenseCategories} · {grouped.expense.length}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {grouped.expense.map(cat => (
                     <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id)} t={t} />
                   ))}

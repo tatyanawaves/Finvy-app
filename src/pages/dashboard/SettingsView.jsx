@@ -88,7 +88,7 @@ export default function SettingsView({ userId, onSave, demo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-lg mx-auto px-6 py-6">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-5 sm:py-6">
         <h2 className="text-white font-semibold text-base mb-6">{t.settings}</h2>
 
         <form onSubmit={handleSave} className="space-y-6">
@@ -97,13 +97,13 @@ export default function SettingsView({ userId, onSave, demo }) {
             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{t.profile}</p>
 
             {/* Avatar */}
-            <div className="flex items-center gap-4 mb-5">
+            <div className="flex items-center gap-3 sm:gap-4 mb-5 min-w-0">
               <div className="w-14 h-14 rounded-full bg-mint/20 flex items-center justify-center text-mint font-black text-xl flex-shrink-0">
                 {(form.display_name || user?.email || '?')[0].toUpperCase()}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-white/80 text-sm font-medium">{form.display_name || user?.email?.split('@')[0]}</p>
-                <p className="text-white/30 text-xs mt-0.5">{user?.email}</p>
+                <p className="text-white/30 text-xs mt-0.5 truncate">{user?.email}</p>
               </div>
             </div>
 
@@ -135,7 +135,7 @@ export default function SettingsView({ userId, onSave, demo }) {
               {/* Language */}
               <div>
                 <label className="text-white/40 text-xs mb-1.5 block">{t.language}</label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {LANGS.map(l => (
                     <button key={l.code} type="button" onClick={() => changeLang(l.code)}
                       className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
@@ -169,7 +169,7 @@ export default function SettingsView({ userId, onSave, demo }) {
               {/* Date format */}
               <div>
                 <label className="text-white/40 text-xs mb-1.5 block">{t.dateFormat}</label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {DATE_FORMATS.map(fmt => (
                     <button key={fmt} type="button" onClick={() => set('date_format', fmt)}
                       className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${

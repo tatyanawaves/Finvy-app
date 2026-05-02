@@ -282,7 +282,7 @@ export default function InvoicesView({ userId, demoData }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Summary + actions bar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-white/5 flex-shrink-0">
+      <div className="flex items-center gap-4 px-4 sm:px-6 py-3 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none">
         {[
           { key: 'paid',    label: t.paid,    color: 'text-mint' },
           { key: 'pending', label: t.pending, color: 'text-yellow-400' },
@@ -295,10 +295,10 @@ export default function InvoicesView({ userId, demoData }) {
             </p>
           </div>
         ))}
-        <div className="w-px h-8 bg-white/5" />
+        <div className="w-px h-8 bg-white/5 flex-shrink-0" />
 
         {/* Status filter */}
-        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
           <button onClick={() => setStatusFilter('all')}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${statusFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}>
             {t.allStatuses}
@@ -318,24 +318,24 @@ export default function InvoicesView({ userId, demoData }) {
           ))}
         </div>
 
-        <div className="flex-1" />
+        <div className="hidden xl:block flex-1" />
         {!isDemo && (
           <button onClick={() => setShowNew(true)}
-            className="bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
+            className="flex-shrink-0 bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
             <span className="text-base leading-none">+</span> {t.createInvoice}
           </button>
         )}
       </div>
 
       {/* Table header */}
-      <div className="grid grid-cols-[1fr_100px_90px_100px_100px_80px] gap-4 px-6 py-2 border-b border-white/5 flex-shrink-0">
+      <div className="hidden sm:grid min-w-[760px] grid-cols-[1fr_100px_90px_100px_100px_80px] gap-4 px-6 py-2 border-b border-white/5 flex-shrink-0">
         {[t.client, t.issueDate, t.dueDate, t.total, t.status, ''].map((h, i) => (
           <p key={i} className="text-white/30 text-xs font-semibold uppercase tracking-wider">{h}</p>
         ))}
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
             <div className="w-6 h-6 border-2 border-mint border-t-transparent rounded-full animate-spin" />
@@ -350,18 +350,18 @@ export default function InvoicesView({ userId, demoData }) {
           invoices.map(inv => (
             <div key={inv.id}
               onClick={() => setViewInvoice(inv)}
-              className="grid grid-cols-[1fr_100px_90px_100px_100px_80px] gap-4 px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group items-center cursor-pointer">
+              className="sm:grid sm:min-w-[760px] sm:grid-cols-[1fr_100px_90px_100px_100px_80px] sm:gap-4 px-4 sm:px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group items-center cursor-pointer">
               {/* Client */}
               <div>
                 <p className="text-white/80 text-xs font-medium">{inv.client_name}</p>
                 <p className="text-white/30 text-[10px] mt-0.5">{inv.number} {inv.client_email ? `· ${inv.client_email}` : ''}</p>
               </div>
               {/* Issue date */}
-              <p className="text-white/40 text-xs">{formatDate(inv.issue_date)}</p>
+              <p className="hidden sm:block text-white/40 text-xs">{formatDate(inv.issue_date)}</p>
               {/* Due date */}
-              <p className={`text-xs ${inv.status === 'overdue' ? 'text-red-400' : 'text-white/40'}`}>{formatDate(inv.due_date)}</p>
+              <p className={`mt-1 sm:mt-0 text-xs ${inv.status === 'overdue' ? 'text-red-400' : 'text-white/40'}`}>{formatDate(inv.due_date)}</p>
               {/* Amount */}
-              <p className="text-white/80 text-xs font-bold">
+              <p className="mt-2 sm:mt-0 text-white/80 text-xs font-bold">
                 {inv.amount?.toLocaleString('en', { maximumFractionDigits: 0 })} {inv.currency}
               </p>
               {/* Status dropdown */}

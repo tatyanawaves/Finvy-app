@@ -1,4 +1,5 @@
 import { useLanding } from '../context/LanguageContext'
+import { IconCheck, IconX } from './Icons'
 
 export default function Vs1C({ onOpenModal }) {
   const lt = useLanding()
@@ -50,11 +51,15 @@ export default function Vs1C({ onOpenModal }) {
                 <span className="text-white/50 text-sm font-medium">{row.aspect}</span>
               </div>
               <div className="px-6 py-4 border-r border-white/5 flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-mint/20 flex items-center justify-center text-mint text-[10px] font-black">✓</span>
+                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-mint/20 flex items-center justify-center text-mint">
+                  <IconCheck className="h-3 w-3" />
+                </span>
                 <span className="text-white/80 text-sm leading-snug">{row.finvy}</span>
               </div>
               <div className="px-6 py-4 flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-red-500/15 flex items-center justify-center text-red-400 text-[10px] font-black">✕</span>
+                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-red-500/15 flex items-center justify-center text-red-400">
+                  <IconX className="h-3 w-3" />
+                </span>
                 <span className="text-white/40 text-sm leading-snug">{row.onec}</span>
               </div>
             </div>
@@ -87,11 +92,15 @@ export default function Vs1C({ onOpenModal }) {
               </div>
               <div className="grid grid-cols-2 divide-x divide-white/5">
                 <div className="px-3 py-3 flex items-start gap-2">
-                  <span className="flex-shrink-0 w-4 h-4 rounded-full bg-mint/20 flex items-center justify-center text-mint text-[9px] font-black mt-0.5">✓</span>
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-mint/20 flex items-center justify-center text-mint mt-0.5">
+                    <IconCheck className="h-3 w-3" />
+                  </span>
                   <span className="text-white/80 text-xs leading-snug">{row.finvy}</span>
                 </div>
                 <div className="px-3 py-3 flex items-start gap-2">
-                  <span className="flex-shrink-0 w-4 h-4 rounded-full bg-red-500/15 flex items-center justify-center text-red-400 text-[9px] font-black mt-0.5">✕</span>
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/15 flex items-center justify-center text-red-400 mt-0.5">
+                    <IconX className="h-3 w-3" />
+                  </span>
                   <span className="text-white/40 text-xs leading-snug">{row.onec}</span>
                 </div>
               </div>

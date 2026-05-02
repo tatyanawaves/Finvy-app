@@ -25,3 +25,5 @@ src/nul
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

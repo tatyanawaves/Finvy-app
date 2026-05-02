@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import { getPlannedOperations } from '../../lib/plannedOperations'
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -46,10 +47,23 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function AnalyticsView({ userId, refreshKey, demoData }) {
   const { t } = useLanguage()
   const [period, setPeriod] = useState('6m')
+  const [includePlanned, setIncludePlanned] = useState(true)
+  const [plannedAvailable, setPlannedAvailable] = useState(false)
+  const [plannedRefreshKey, setPlannedRefreshKey] = useState(0)
   const [chartData, setChartData] = useState([])
   const [categoryData, setCategoryData] = useState([])
   const [totals, setTotals] = useState({ income: 0, expense: 0, profit: 0 })
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const refreshPlanned = () => setPlannedRefreshKey(key => key + 1)
+    window.addEventListener('finvy:planned-payroll-updated', refreshPlanned)
+    window.addEventListener('storage', refreshPlanned)
+    return () => {
+      window.removeEventListener('finvy:planned-payroll-updated', refreshPlanned)
+      window.removeEventListener('storage', refreshPlanned)
+    }
+  }, [])
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true)
@@ -61,11 +75,14 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
     fromDate.setDate(1)
     fromDate.setMonth(fromDate.getMonth() - (months - 1))
     fromDate.setHours(0, 0, 0, 0)
+    const toDate = new Date(monthsList[monthsList.length - 1].year, monthsList[monthsList.length - 1].month + 1, 0)
+    const from = fromDate.toISOString().slice(0, 10)
+    const to = toDate.toISOString().slice(0, 10)
 
     let data
     if (demoData) {
       data = demoData.filter(tx =>
-        tx.date >= fromDate.toISOString().slice(0, 10) &&
+        tx.date >= from &&
         (tx.type === 'income' || tx.type === 'expense')
       )
     } else {
@@ -73,18 +90,23 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
         .from('transactions')
         .select('type, amount, date, category')
         .eq('user_id', userId)
-        .gte('date', fromDate.toISOString())
+        .gte('date', from)
         .in('type', ['income', 'expense'])
       data = res.data
     }
 
     if (!data) { setLoading(false); return }
 
+    const plannedTxs = await getPlannedOperations({ userId, demo: !!demoData, from, to })
+    setPlannedAvailable(plannedTxs.length > 0)
+
+    const analyticsData = includePlanned ? [...data, ...plannedTxs] : data
+
     // Build monthly chart data
     const monthMap = {}
     monthsList.forEach(m => { monthMap[m.key] = { ...m, income: 0, expense: 0, profit: 0 } })
 
-    data.forEach(tx => {
+    analyticsData.forEach(tx => {
       if (!tx.date) return
       const key = tx.date.slice(0, 7)
       if (!monthMap[key]) return
@@ -100,14 +122,14 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
     setChartData(builtData)
 
     // Totals
-    const inc = data.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
-    const exp = data.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
+    const inc = analyticsData.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
+    const exp = analyticsData.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
     setTotals({ income: inc, expense: exp, profit: inc - exp })
 
     // Category breakdown (expenses)
     const catMap = {}
-    data.filter(tx => tx.type === 'expense').forEach(tx => {
-      const cat = tx.category || '—'
+    analyticsData.filter(tx => tx.type === 'expense').forEach(tx => {
+      const cat = tx.planned ? `${tx.category || 'Зарплата'} (план)` : (tx.category || '—')
       catMap[cat] = (catMap[cat] || 0) + Math.abs(tx.amount || 0)
     })
     const catArr = Object.entries(catMap)
@@ -117,7 +139,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
     setCategoryData(catArr)
 
     setLoading(false)
-  }, [userId, period, refreshKey])
+  }, [userId, period, refreshKey, includePlanned, plannedRefreshKey, demoData])
 
   useEffect(() => {
     fetchAnalytics()
@@ -127,27 +149,41 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         {/* Header row */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h2 className="text-white/80 text-sm font-semibold">{t.cashFlow}</h2>
-          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
-            {PERIODS.map(opt => (
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            {plannedAvailable && (
               <button
-                key={opt.key}
-                onClick={() => setPeriod(opt.key)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  period === opt.key ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
+                onClick={() => setIncludePlanned(v => !v)}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                  includePlanned
+                    ? 'bg-[#4F8EF7]/15 border-[#4F8EF7]/30 text-[#4F8EF7]'
+                    : 'bg-white/5 border-white/10 text-white/35 hover:text-white/60'
                 }`}
               >
-                {opt.key === '3m' ? t.months3 : opt.key === '6m' ? t.months6 : t.months12}
+                План
               </button>
-            ))}
+            )}
+            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+              {PERIODS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setPeriod(opt.key)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    period === opt.key ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  {opt.key === '3m' ? t.months3 : opt.key === '6m' ? t.months6 : t.months12}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           {[
             { label: t.totalIncome,   value: totals.income,  color: 'text-mint',     bg: 'bg-mint/5 border-mint/10' },
             { label: t.totalExpenses, value: totals.expense, color: 'text-red-400',  bg: 'bg-red-500/5 border-red-500/10' },
@@ -177,7 +213,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
                   />

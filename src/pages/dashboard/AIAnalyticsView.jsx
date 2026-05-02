@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import { useAuth } from '../../context/AuthContext'
+import { getPlannedOperations, summarizePlannedOperations } from '../../lib/plannedOperations'
 
 // ─── i18n strings for insights ───────────────────────────────────────────────
 const INSIGHT_I18N = {
@@ -174,6 +175,63 @@ function fmtAmt(n) {
   return '₸' + Math.round(n).toLocaleString('ru')
 }
 
+function createLocalAIReply(question, txs, accounts, lang, plannedOps = []) {
+  const isRu = lang === 'ru'
+  const isKz = lang === 'kz'
+  const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0)
+  const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
+  const expenses = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount || 0), 0)
+  const net = income - expenses
+  const catMap = {}
+  txs.filter(t => t.type === 'expense').forEach(t => {
+    const category = t.category || (isRu ? 'Без категории' : isKz ? 'Санатсыз' : 'Uncategorized')
+    catMap[category] = (catMap[category] || 0) + Math.abs(t.amount || 0)
+  })
+  const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const savingsRate = income > 0 ? Math.round((net / income) * 100) : 0
+  const planned = summarizePlannedOperations(plannedOps)
+  const plannedRu = plannedOps.length
+    ? `План на ближайший период: доходы ${fmtAmt(planned.income)}, расходы ${fmtAmt(planned.expense)}, чистый план ${fmtAmt(planned.net)}.`
+    : 'Плановых операций на ближайший период пока нет.'
+  const plannedEn = plannedOps.length
+    ? `Upcoming plan: income ${fmtAmt(planned.income)}, expenses ${fmtAmt(planned.expense)}, net plan ${fmtAmt(planned.net)}.`
+    : 'There are no planned operations for the upcoming period yet.'
+
+  if (isRu) {
+    return [
+      'Сейчас внешний AI-сервис временно недоступен, но я уже посчитал базовую аналитику по вашим данным.',
+      `Баланс по счетам: ${fmtAmt(totalBalance)}.`,
+      `Доходы: ${fmtAmt(income)}, расходы: ${fmtAmt(expenses)}, результат: ${fmtAmt(net)}.`,
+      `Норма сбережений: ${savingsRate}%.`,
+      plannedRu,
+      topCats.length ? `Самые крупные статьи расходов: ${topCats.map(([cat, sum]) => `${cat} — ${fmtAmt(sum)}`).join('; ')}.` : 'Расходов для анализа пока мало.',
+      'Рекомендация: проверьте самые крупные категории и поставьте лимит на 10-15% ниже текущего уровня.',
+    ].join('\n\n')
+  }
+
+  if (isKz) {
+    return [
+      'Сыртқы AI сервисі уақытша қолжетімсіз, бірақ мен деректер бойынша негізгі талдауды есептедім.',
+      `Шоттар балансы: ${fmtAmt(totalBalance)}.`,
+      `Кіріс: ${fmtAmt(income)}, шығыс: ${fmtAmt(expenses)}, нәтиже: ${fmtAmt(net)}.`,
+      `Жинақ деңгейі: ${savingsRate}%.`,
+      plannedRu,
+      topCats.length ? `Ең үлкен шығын санаттары: ${topCats.map(([cat, sum]) => `${cat} — ${fmtAmt(sum)}`).join('; ')}.` : 'Талдауға шығын деректері әзірге аз.',
+      'Ұсыныс: ең үлкен санаттарды қарап, ағымдағы деңгейден 10-15% төмен лимит қойыңыз.',
+    ].join('\n\n')
+  }
+
+  return [
+    'The external AI service is temporarily unavailable, but I calculated a local financial summary from your data.',
+    `Account balance: ${fmtAmt(totalBalance)}.`,
+    `Income: ${fmtAmt(income)}, expenses: ${fmtAmt(expenses)}, net result: ${fmtAmt(net)}.`,
+    `Savings rate: ${savingsRate}%.`,
+    plannedEn,
+    topCats.length ? `Top expense categories: ${topCats.map(([cat, sum]) => `${cat} — ${fmtAmt(sum)}`).join('; ')}.` : 'There is not enough expense data yet.',
+    'Recommendation: review the largest categories and set limits 10-15% below the current level.',
+  ].join('\n\n')
+}
+
 // ─── Insight Card ─────────────────────────────────────────────────────────────
 const INSIGHT_STYLES = {
   positive: 'border-blue-500/20 bg-blue-500/5',
@@ -217,7 +275,26 @@ const QUICK_PROMPTS = [
   { en: 'How can I save more?', ru: 'Как мне больше экономить?', kz: 'Қалай көбірек үнемдеуге болады?' },
   { en: 'What are my biggest risks?', ru: 'Какие у меня финансовые риски?', kz: 'Қаржылық тәуекелдерім қандай?' },
   { en: 'Forecast next month', ru: 'Прогноз на следующий месяц', kz: 'Келесі айға болжам' },
+  { en: 'Find hidden losses', ru: 'Найди скрытые потери', kz: 'Жасырын шығындарды тап' },
+  { en: 'Create an action plan', ru: 'Составь план действий', kz: 'Іс-қимыл жоспарын жаса' },
+  { en: 'What should I pay first?', ru: 'Что оплатить в первую очередь?', kz: 'Алдымен нені төлеу керек?' },
+  { en: 'How to improve cash flow?', ru: 'Как улучшить Cash Flow?', kz: 'Cash Flow қалай жақсартамын?' },
 ]
+
+function getSmartPrompts(lang, messages, insights) {
+  const last = [...messages].reverse().find(m => m.role === 'assistant' || m.role === 'user')?.content?.toLowerCase() || ''
+  const hasRisk = last.includes('риск') || last.includes('risk') || insights.some(i => i.type === 'warning' || i.type === 'danger')
+  const hasForecast = last.includes('прогноз') || last.includes('forecast')
+  const hasExpenses = last.includes('расход') || last.includes('expense')
+  const contextual = []
+
+  if (hasExpenses) contextual.push({ en: 'Which expenses should I cut first?', ru: 'Какие расходы сократить первыми?', kz: 'Қай шығындарды бірінші қысқарту керек?' })
+  if (hasRisk) contextual.push({ en: 'Explain these risks by priority', ru: 'Разложи риски по приоритету', kz: 'Тәуекелдерді басымдықпен түсіндір' })
+  if (hasForecast) contextual.push({ en: 'Show the forecast assumptions', ru: 'Покажи допущения прогноза', kz: 'Болжамның негіздерін көрсет' })
+  if (insights[0]?.title) contextual.push({ en: `Explain: ${insights[0].title}`, ru: `Объясни: ${insights[0].title}`, kz: `Түсіндір: ${insights[0].title}` })
+
+  return [...contextual, ...QUICK_PROMPTS].slice(0, 9).map(p => p[lang] || p.en)
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
@@ -227,6 +304,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
   const insightL = INSIGHT_I18N[lang] || INSIGHT_I18N.en
   const [txs, setTxs] = useState(demoData || [])
   const [accounts, setAccounts] = useState(demoAccounts || [])
+  const [plannedOps, setPlannedOps] = useState([])
   const [loading, setLoading] = useState(!demoData)
   const [insights, setInsights] = useState(demoData ? computeInsights(demoData, lang) : [])
   const [messages, setMessages] = useState([
@@ -236,6 +314,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
   const [chatLoading, setChatLoading] = useState(false)
   const [apiKeyMissing, setApiKeyMissing] = useState(false)
   const chatEndRef = useRef(null)
+  const smartPrompts = getSmartPrompts(lang, messages, insights)
 
   // Load transaction data
   useEffect(() => {
@@ -252,6 +331,28 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
     }
     load()
   }, [userId, lang, demoData])
+
+  useEffect(() => {
+    const loadPlanned = async () => {
+      const from = new Date()
+      const to = new Date()
+      to.setDate(to.getDate() + 60)
+      const ops = await getPlannedOperations({
+        userId,
+        demo: !!demoData,
+        from: from.toISOString().slice(0, 10),
+        to: to.toISOString().slice(0, 10),
+      })
+      setPlannedOps(ops)
+    }
+    loadPlanned()
+    window.addEventListener('finvy:planned-payroll-updated', loadPlanned)
+    window.addEventListener('storage', loadPlanned)
+    return () => {
+      window.removeEventListener('finvy:planned-payroll-updated', loadPlanned)
+      window.removeEventListener('storage', loadPlanned)
+    }
+  }, [userId, demoData])
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -273,15 +374,51 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
       catMap[t.category || 'Other'] = (catMap[t.category || 'Other'] || 0) + Math.abs(t.amount || 0)
     })
     const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    return `Total balance: $${totalBalance.toLocaleString('en')}
-This month income: $${income.toLocaleString('en')}
-This month expenses: $${expenses.toLocaleString('en')}
-Net profit this month: $${(income - expenses).toLocaleString('en')}
+    const amount = (value) => `${Math.round(value).toLocaleString('ru-RU')} ₸`
+    const topCategoryText = topCats.map(([k, v]) => `${k} (${amount(v)})`).join(', ')
+    const accountText = accounts.map(a => `${a.name} (${amount(a.balance || 0)})`).join(', ')
+    const planned = summarizePlannedOperations(plannedOps)
+    const plannedText = plannedOps.length
+      ? plannedOps.slice(0, 8).map(op => `${op.date}: ${op.type === 'income' ? '+' : '-'}${amount(op.amount || 0)} ${op.category || op.description}`).join('; ')
+      : 'none'
+
+    if (lang === 'ru') {
+      return `Отвечай на русском языке. Валюта всех сумм: казахстанский тенге (₸).
+Общий баланс: ${amount(totalBalance)}
+Доход за текущий месяц: ${amount(income)}
+Расходы за текущий месяц: ${amount(expenses)}
+Чистый результат за текущий месяц: ${amount(income - expenses)}
+Норма сбережений: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0}%
+Главные категории расходов: ${topCategoryText}
+Количество транзакций за месяц: ${thisMonth.length}
+Плановые операции на 60 дней: доходы ${amount(planned.income)}, расходы ${amount(planned.expense)}, чистый план ${amount(planned.net)}. Список: ${plannedText}
+Счета: ${accountText}`
+    }
+
+    if (lang === 'kz') {
+      return `Қазақ тілінде жауап бер. Барлық сома валютасы: қазақстандық теңге (₸).
+Жалпы баланс: ${amount(totalBalance)}
+Осы айдағы кіріс: ${amount(income)}
+Осы айдағы шығыс: ${amount(expenses)}
+Осы айдағы таза нәтиже: ${amount(income - expenses)}
+Жинақ деңгейі: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0}%
+Негізгі шығыс санаттары: ${topCategoryText}
+Осы айдағы транзакциялар саны: ${thisMonth.length}
+Плановые операции на 60 дней: доходы ${amount(planned.income)}, расходы ${amount(planned.expense)}, чистый план ${amount(planned.net)}. Список: ${plannedText}
+Шоттар: ${accountText}`
+    }
+
+    return `Answer in English. Currency for all amounts: Kazakhstani tenge (₸).
+Total balance: ${amount(totalBalance)}
+This month income: ${amount(income)}
+This month expenses: ${amount(expenses)}
+Net profit this month: ${amount(income - expenses)}
 Savings rate: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0}%
-Top expense categories: ${topCats.map(([k, v]) => `${k} ($${Math.round(v).toLocaleString('en')})`).join(', ')}
+Top expense categories: ${topCategoryText}
 Total transactions this month: ${thisMonth.length}
-Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en')})`).join(', ')}`
-  }, [txs, accounts])
+Planned operations for 60 days: income ${amount(planned.income)}, expenses ${amount(planned.expense)}, net plan ${amount(planned.net)}. List: ${plannedText}
+Accounts: ${accountText}`
+  }, [txs, accounts, plannedOps, lang])
 
   const sendMessage = async (text) => {
     const msg = text || input.trim()
@@ -293,31 +430,29 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
     setApiKeyMissing(false)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(`https://woelxkjfbjgazcbozrak.supabase.co/functions/v1/ai-finance-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          context: buildContext(),
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('ai-finance-chat', {
+          body: {
+            messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+            context: buildContext(),
+            language: lang,
+          },
         }),
-      })
-      const data = await res.json()
-      if (data.error) {
-        if (data.error.includes('ANTHROPIC_API_KEY')) {
+        new Promise(resolve => {
+          setTimeout(() => resolve({ data: { error: 'AI_TIMEOUT' }, error: null }), 12000)
+        }),
+      ])
+      if (error || data?.error) {
+        const message = error?.message || data?.error || 'AI service is unavailable'
+        if (message.includes('OPENROUTER_API_KEY') || message.includes('ANTHROPIC_API_KEY')) {
           setApiKeyMissing(true)
-          setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ ' + data.error }])
-        } else {
-          setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }])
         }
+        setMessages(prev => [...prev, { role: 'assistant', content: createLocalAIReply(msg, txs, accounts, lang, plannedOps) }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+        setMessages(prev => [...prev, { role: 'assistant', content: data.reply || createLocalAIReply(msg, txs, accounts, lang, plannedOps) }])
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Network error: ${err.message}` }])
+      setMessages(prev => [...prev, { role: 'assistant', content: createLocalAIReply(msg, txs, accounts, lang, plannedOps) }])
     }
     setChatLoading(false)
   }
@@ -329,12 +464,11 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
   )
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto px-4 sm:px-5 py-4 sm:py-5">
       {/* Left: Insights */}
-      <div className="w-[44%] border-r border-white/5 overflow-y-auto flex-shrink-0">
-        <div className="px-5 py-5">
+      <div className="w-full flex-shrink-0 rounded-2xl border border-white/10 bg-[#151515]">
+        <div className="p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-7 h-7 rounded-lg bg-[#4F8EF7]/20 flex items-center justify-center text-sm">✦</div>
             <div>
               <h2 className="text-white font-semibold text-sm">{t.aiInsights || 'AI Insights'}</h2>
               <p className="text-white/30 text-xs">{t.aiInsightsSub || 'Based on your transaction history'}</p>
@@ -347,17 +481,17 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
               <p className="text-sm">{t.noInsights || 'Add more transactions to get insights'}</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {insights.map((ins, i) => (
                 <div key={i} className={`rounded-xl border p-4 ${INSIGHT_STYLES[ins.type]}`}>
                   <div className="flex items-start gap-3">
                     <span className="text-xl leading-none flex-shrink-0 mt-0.5">{ins.icon}</span>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${INSIGHT_DOT[ins.type]}`} />
-                        <p className="text-white/80 text-xs font-semibold">{ins.title}</p>
+                        <p className="text-white/80 text-xs font-semibold line-clamp-2">{ins.title}</p>
                       </div>
-                      <p className="text-white/50 text-xs leading-relaxed">{ins.text}</p>
+                      <p className="text-white/50 text-xs leading-relaxed line-clamp-3">{ins.text}</p>
                     </div>
                   </div>
                 </div>
@@ -388,12 +522,9 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
       </div>
 
       {/* Right: AI Chat */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex min-h-[520px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#151515] shadow-[0_22px_70px_-56px_rgba(79,142,247,0.55)]">
         {/* Chat header */}
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5 flex-shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4F8EF7] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
-            ✦
-          </div>
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-white/5 flex-shrink-0">
           <div>
             <p className="text-white/80 text-sm font-semibold">{t.aiAssistant || 'AI Financial Assistant'}</p>
             <p className="text-white/30 text-xs">{t.aiPoweredBy || 'Powered by Claude'}</p>
@@ -408,12 +539,12 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
         {apiKeyMissing && (
           <div className="mx-4 mt-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
             <p className="text-yellow-400 text-xs font-semibold mb-1">⚙️ Setup required</p>
-            <p className="text-yellow-400/70 text-xs">Add your Anthropic API key in Supabase Dashboard → Edge Functions → ai-finance-chat → Secrets → <code className="bg-yellow-500/10 px-1 rounded">ANTHROPIC_API_KEY</code></p>
+            <p className="text-yellow-400/70 text-xs">Add your OpenRouter API key in Supabase Dashboard → Edge Functions → ai-finance-chat → Secrets → <code className="bg-yellow-500/10 px-1 rounded">OPENROUTER_API_KEY</code></p>
           </div>
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 min-h-[300px] overflow-y-auto px-4 sm:px-5 py-4 space-y-4">
           {messages.map((msg, i) => (
             <ChatBubble key={i} msg={msg} />
           ))}
@@ -431,12 +562,12 @@ Accounts: ${accounts.map(a => `${a.name} ($${(a.balance || 0).toLocaleString('en
         </div>
 
         {/* Quick prompts */}
-        {messages.length <= 1 && (
+        {!chatLoading && (
           <div className="px-4 pb-2 flex flex-wrap gap-2">
-            {QUICK_PROMPTS.map((p, i) => (
-              <button key={i} onClick={() => sendMessage(p[lang] || p.en)}
-                className="text-xs text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-full transition-colors">
-                {p[lang] || p.en}
+            {smartPrompts.map((prompt, i) => (
+              <button key={`${prompt}-${i}`} onClick={() => sendMessage(prompt)}
+                className="text-xs text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20 bg-white/[0.025] px-3 py-1.5 rounded-full transition-colors">
+                {prompt}
               </button>
             ))}
           </div>

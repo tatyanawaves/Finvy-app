@@ -159,15 +159,15 @@ export default function ReportsView({ userId, demoData }) {
   return (
     <>
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
           <h2 className="text-white/80 text-sm font-semibold">{t.reports}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 lg:pb-0">
             {/* Import statement CTA */}
             <button
               onClick={() => setShowImport(true)}
-              className="bg-[#4F8EF7]/10 hover:bg-[#4F8EF7]/20 border border-[#4F8EF7]/25 text-[#4F8EF7] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+              className="flex-shrink-0 bg-[#4F8EF7]/10 hover:bg-[#4F8EF7]/20 border border-[#4F8EF7]/25 text-[#4F8EF7] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
             >
               <span>📄</span>
               Импорт выписки
@@ -175,17 +175,17 @@ export default function ReportsView({ userId, demoData }) {
             {/* Cashback report CTA */}
             <button
               onClick={() => setShowCashback(true)}
-              className="bg-mint/10 hover:bg-mint/20 border border-mint/25 text-mint text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+              className="flex-shrink-0 bg-mint/10 hover:bg-mint/20 border border-mint/25 text-mint text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
             >
               <span>💳</span>
               Анализ кэшбэков
             </button>
-            <div className="w-px h-4 bg-white/10" />
-            <button onClick={exportCsv} className="text-white/50 hover:text-white border border-white/10 hover:border-white/20 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+            <div className="w-px h-4 bg-white/10 flex-shrink-0" />
+            <button onClick={exportCsv} className="flex-shrink-0 text-white/50 hover:text-white border border-white/10 hover:border-white/20 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 9h8M6 1v6M3.5 5l2.5 2.5L9 5"/></svg>
               {t.exportCsv}
             </button>
-            <button onClick={exportPdf} className="text-white/50 hover:text-white border border-white/10 hover:border-white/20 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+            <button onClick={exportPdf} className="flex-shrink-0 text-white/50 hover:text-white border border-white/10 hover:border-white/20 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="10" height="10" rx="1"/><path d="M4 4h4M4 6h4M4 8h2"/></svg>
               {t.exportPdf}
             </button>
@@ -194,10 +194,10 @@ export default function ReportsView({ userId, demoData }) {
 
         {/* Period selector */}
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 overflow-x-auto scrollbar-none max-w-full">
             {PRESET_PERIODS.map(p => (
               <button key={p.key} onClick={() => setPreset(p.key)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                className={`flex-shrink-0 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   preset === p.key ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
                 }`}>
                 {p.label}
@@ -222,7 +222,7 @@ export default function ReportsView({ userId, demoData }) {
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
               {[
                 { label: t.reportIncome,  value: summary.income,  color: 'text-mint',    bg: 'bg-mint/5 border-mint/10' },
                 { label: t.reportExpense, value: summary.expense, color: 'text-red-400', bg: 'bg-red-500/5 border-red-500/10' },
@@ -270,9 +270,9 @@ export default function ReportsView({ userId, demoData }) {
 
                 {/* Category breakdown table */}
                 {catData.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5">
+                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 sm:p-5 overflow-x-auto">
                     <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{t.reportByCategory}</p>
-                    <div className="space-y-0">
+                    <div className="space-y-0 min-w-[560px]">
                       {/* Header */}
                       <div className="grid grid-cols-[1fr_100px_100px_100px] gap-4 pb-2 border-b border-white/5 mb-1">
                         {[t.category, t.reportIncome, t.reportExpense, t.reportProfit].map(h => (
@@ -308,6 +308,9 @@ export default function ReportsView({ userId, demoData }) {
     )}
     {showImport && (
       <ImportStatementModal
+        userId={userId}
+        demo={!!demoData}
+        onImported={fetchReport}
         onClose={() => setShowImport(false)}
       />
     )}

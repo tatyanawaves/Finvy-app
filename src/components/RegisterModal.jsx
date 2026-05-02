@@ -22,8 +22,9 @@ function StepOne({ onNext, lt }) {
   const [country, setCountry] = useState(countries[0])
   const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
+  const [confirmationEmail, setConfirmationEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signUp, signIn, signInWithGoogle } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const validate = () => {
@@ -39,12 +40,28 @@ function StepOne({ onNext, lt }) {
     if (!validate()) return
     setLoading(true)
     setApiError('')
-    const { error } = await signUp({ email, password })
+    const { data, error } = await signUp({ email, password })
     if (error) { setLoading(false); setApiError(error.message); return }
-    // Auto sign-in after signup (bypasses email confirmation requirement)
-    await signIn({ email, password })
+    if (!data?.session) {
+      setLoading(false)
+      setConfirmationEmail(email)
+      return
+    }
     setLoading(false)
     onNext({ email, password, phone: country.code + phone })
+  }
+
+  if (confirmationEmail) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
+        <div className="w-14 h-14 rounded-full bg-mint/15 flex items-center justify-center text-2xl">✓</div>
+        <h3 className="text-xl font-bold text-gray-800">Проверьте почту</h3>
+        <p className="text-gray-500 text-sm leading-relaxed max-w-sm">
+          Мы отправили письмо на <span className="font-semibold text-gray-700">{confirmationEmail}</span>.
+          Перейдите по ссылке в письме, чтобы подтвердить аккаунт и войти в Finvy.
+        </p>
+      </div>
+    )
   }
 
   return (

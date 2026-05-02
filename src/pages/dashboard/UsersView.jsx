@@ -66,16 +66,16 @@ export default function UsersView() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-6 py-6">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-white font-semibold text-base">{t.teamMembers}</h2>
             <p className="text-white/30 text-xs mt-0.5">{members.length} {t.member}</p>
           </div>
           <button
             onClick={() => setShowInvite(true)}
-            className="bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5"
+            className="w-full sm:w-auto justify-center bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5"
           >
             <span className="text-base leading-none">+</span> {t.inviteUser}
           </button>
@@ -85,7 +85,7 @@ export default function UsersView() {
         {showInvite && (
           <form onSubmit={handleInvite} className="bg-white/[0.04] border border-white/10 rounded-xl p-4 mb-5">
             <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">{t.inviteUser}</p>
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <input
                 type="email"
                 value={inviteEmail}
@@ -104,7 +104,7 @@ export default function UsersView() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -122,10 +122,10 @@ export default function UsersView() {
         {/* Members list */}
         <div className="bg-white/[0.03] border border-white/5 rounded-xl overflow-hidden">
           {members.map((m, i) => (
-            <div key={m.id || m.email || i} className={`flex items-center gap-3 px-4 py-3.5 ${i < members.length - 1 ? 'border-b border-white/5' : ''}`}>
+            <div key={m.id || m.email || i} className={`flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3.5 ${i < members.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Avatar name={m.name} size={9} />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="text-white text-sm font-medium truncate">{m.name}</p>
                   {m.pending && (
                     <span className="text-[10px] text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded-full flex-shrink-0">

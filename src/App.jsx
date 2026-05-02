@@ -8,35 +8,53 @@ import AppDemo from './components/AppDemo'
 import Features from './components/Features'
 import HowItWorks from './components/HowItWorks'
 import ForBusiness from './components/ForBusiness'
-import Vs1C from './components/Vs1C'
 import CashbackTeaser from './components/CashbackTeaser'
 import Pricing from './components/Pricing'
 import ContactSection from './components/ContactSection'
 import Footer from './components/Footer'
+import RegisterModal from './components/RegisterModal'
 import Dashboard from './pages/Dashboard'
 import { SubscriptionProvider } from './context/SubscriptionContext'
+import { useState } from 'react'
 
 function LandingPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [authModal, setAuthModal] = useState(null)
+  const [selectedPlan, setSelectedPlan] = useState('business')
+  const [selectedPeriod, setSelectedPeriod] = useState('half')
 
   if (user) return <Navigate to="/dashboard" replace />
 
   const goDemo = () => navigate('/demo')
+  const openRegister = (plan = 'business', period = 'half') => {
+    setSelectedPlan(plan || 'business')
+    setSelectedPeriod(period || 'half')
+    setAuthModal('register')
+  }
+  const openLogin = () => setAuthModal('login')
 
   return (
     <div className="min-h-screen bg-[#24272b] font-sans overflow-x-hidden">
-      <Navbar onOpenModal={goDemo} onOpenLogin={goDemo} />
+      <Navbar onOpenModal={openRegister} onOpenLogin={openLogin} />
+      {/* Hero CTA "Попробовать без регистрации" → goes straight to demo */}
       <Hero onOpenModal={goDemo} />
       <AppDemo />
-      <CashbackTeaser onOpenModal={goDemo} />
+      <CashbackTeaser onOpenModal={openRegister} />
       <Features />
-      <HowItWorks onOpenModal={goDemo} />
-      <Vs1C onOpenModal={goDemo} />
-      <ForBusiness onOpenModal={goDemo} />
-      <Pricing onOpenModal={goDemo} />
+      <HowItWorks onOpenModal={openRegister} />
+      <ForBusiness onOpenModal={openRegister} />
+      <Pricing onOpenModal={openRegister} />
       <ContactSection />
       <Footer />
+      {authModal && (
+        <RegisterModal
+          initialMode={authModal}
+          selectedPlan={selectedPlan}
+          selectedPeriod={selectedPeriod}
+          onClose={() => setAuthModal(null)}
+        />
+      )}
     </div>
   )
 }

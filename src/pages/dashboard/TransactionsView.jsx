@@ -51,7 +51,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
   const sym = symOf(currency)
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState('month')
+  const [period, setPeriod] = useState('all')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all') // 'all' | 'income' | 'expense' | 'transfer'
   const [summary, setSummary] = useState({ income: 0, expense: 0, profit: 0 })
@@ -116,33 +116,33 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Summary bar */}
-      <div className="flex items-center gap-6 px-6 py-3 border-b border-white/5 flex-shrink-0">
-        <div>
+      <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-6 py-3 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none">
+        <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{t.income}</p>
           <p className="text-mint font-bold text-sm">{sym}+{summary.income.toLocaleString('en', { maximumFractionDigits: 0 })}</p>
         </div>
-        <div className="w-px h-8 bg-white/5" />
-        <div>
+        <div className="hidden sm:block w-px h-8 bg-white/5" />
+        <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{t.expense}</p>
           <p className="text-red-400 font-bold text-sm">{sym}−{summary.expense.toLocaleString('en', { maximumFractionDigits: 0 })}</p>
         </div>
-        <div className="w-px h-8 bg-white/5" />
-        <div>
+        <div className="hidden sm:block w-px h-8 bg-white/5" />
+        <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{t.profit}</p>
           <p className={`font-bold text-sm ${summary.profit >= 0 ? 'text-mint' : 'text-red-400'}`}>
             {sym}{summary.profit >= 0 ? '+' : '−'}{Math.abs(summary.profit).toLocaleString('en', { maximumFractionDigits: 0 })}
           </p>
         </div>
 
-        <div className="flex-1" />
+        <div className="hidden xl:block flex-1" />
 
         {/* Period toggle */}
-        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 overflow-x-auto scrollbar-none max-w-full">
           {PERIOD_KEYS.map(key => (
             <button
               key={key}
               onClick={() => setPeriod(key)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-shrink-0 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                 period === key ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
               }`}
             >
@@ -152,12 +152,12 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
         </div>
 
         {/* Type filter */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none max-w-full">
           {['all', 'income', 'expense', 'transfer'].map(type => (
             <button
               key={type}
               onClick={() => setTypeFilter(type)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                 typeFilter === type
                   ? type === 'income' ? 'bg-mint/20 text-mint'
                     : type === 'expense' ? 'bg-red-500/20 text-red-400'
@@ -179,13 +179,13 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={t.search}
-            className="bg-white/5 border border-white/10 rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-mint/50 w-36"
+            className="bg-white/5 border border-white/10 rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-mint/50 w-[min(15rem,calc(100vw-2rem))] sm:w-36"
           />
         </div>
       </div>
 
       {/* Table header */}
-      <div className="grid min-w-[760px] grid-cols-[minmax(220px,1fr)_120px_120px_100px_100px] gap-4 px-6 py-2 border-b border-white/5 flex-shrink-0">
+      <div className="hidden sm:grid min-w-[760px] grid-cols-[minmax(220px,1fr)_120px_120px_100px_100px] gap-4 px-6 py-2 border-b border-white/5 flex-shrink-0">
         {[t.description, t.category, t.account, t.date, t.amount].map(h => (
           <p key={h} className="text-white/30 text-xs font-semibold uppercase tracking-wider">{h}</p>
         ))}
@@ -213,7 +213,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
               {grouped[dateKey].map(tx => (
                 <div
                   key={tx.id}
-                  className="grid min-w-[760px] grid-cols-[minmax(220px,1fr)_120px_120px_100px_100px] gap-4 px-6 py-3 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                  className="sm:grid sm:min-w-[760px] sm:grid-cols-[minmax(220px,1fr)_120px_120px_100px_100px] sm:gap-4 px-4 sm:px-6 py-3 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group cursor-pointer"
                 >
                   {/* Description + type badge */}
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -226,13 +226,13 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
                     )}
                   </div>
                   {/* Category */}
-                  <p className="text-white/40 text-xs truncate self-center">{tx.category || '—'}</p>
+                  <p className="text-white/40 text-xs truncate self-center mt-1 sm:mt-0">{tx.category || '—'}</p>
                   {/* Account */}
-                  <p className="text-white/40 text-xs truncate self-center">{accountName(tx.accountId)}</p>
+                  <p className="hidden sm:block text-white/40 text-xs truncate self-center">{accountName(tx.accountId)}</p>
                   {/* Date */}
-                  <p className="text-white/30 text-xs self-center">{formatDate(tx.date, lang)}</p>
+                  <p className="hidden sm:block text-white/30 text-xs self-center">{formatDate(tx.date, lang)}</p>
                   {/* Amount */}
-                  <p className={`text-xs font-bold self-center text-right ${typeColor[tx.type] || 'text-white/50'}`}>
+                  <p className={`mt-2 sm:mt-0 text-xs font-bold self-center sm:text-right ${typeColor[tx.type] || 'text-white/50'}`}>
                     {formatAmount(tx.amount, tx.type)}
                   </p>
                 </div>

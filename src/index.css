@@ -33,6 +33,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
 .grid-bg {
   background-image:
     linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
@@ -61,4 +68,112 @@ body {
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+/* ── Floating glass cards: 3 organic, non-synced animations ── */
+@keyframes float-a {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-6deg); }
+  50%      { transform: translate3d(0, -18px, 0) rotate(-4.5deg); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(5deg); }
+  50%      { transform: translate3d(0, -22px, 0) rotate(7deg); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+  50%      { transform: translate3d(0, -14px, 0) rotate(-1.5deg); }
+}
+
+.float-card-a { animation: float-a 7s ease-in-out infinite; }
+.float-card-b { animation: float-b 9s ease-in-out infinite; animation-delay: -2s; }
+.float-card-c { animation: float-c 6s ease-in-out infinite; animation-delay: -4s; }
+
+/* ── Soft pulsing background blobs for depth ── */
+@keyframes blob-pulse-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50%      { transform: translate3d(40px, -30px, 0) scale(1.08); opacity: 0.75; }
+}
+@keyframes blob-pulse-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.45; }
+  50%      { transform: translate3d(-50px, 25px, 0) scale(1.12); opacity: 0.65; }
+}
+@keyframes blob-pulse-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.35; }
+  50%      { transform: translate3d(20px, 40px, 0) scale(1.05); opacity: 0.55; }
+}
+
+.bg-blob-1 { animation: blob-pulse-1 14s ease-in-out infinite; }
+.bg-blob-2 { animation: blob-pulse-2 18s ease-in-out infinite; animation-delay: -5s; }
+.bg-blob-3 { animation: blob-pulse-3 22s ease-in-out infinite; animation-delay: -9s; }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .float-card-a, .float-card-b, .float-card-c,
+  .bg-blob-1, .bg-blob-2, .bg-blob-3,
+  .bill-fall, .bill-flutter {
+    animation: none;
+  }
+}
+
+/* ── Falling banknotes (background) ── */
+@keyframes bill-fall {
+  0% {
+    transform: translate3d(0, -15vh, 0) rotate(var(--bill-start-rot, -10deg));
+    opacity: 0;
+  }
+  8%  { opacity: 0.9; }
+  88% { opacity: 0.75; }
+  100% {
+    transform: translate3d(var(--bill-drift, 50px), 115vh, 0) rotate(var(--bill-end-rot, 380deg));
+    opacity: 0;
+  }
+}
+
+/* Sway: banknotes flutter side-to-side as they fall (paper-like) */
+@keyframes bill-flutter {
+  0%, 100% {
+    transform: perspective(420px) rotateY(28deg) rotateX(6deg) skewX(-3deg);
+  }
+  25% {
+    transform: perspective(420px) rotateY(-32deg) rotateX(-4deg) skewX(4deg);
+  }
+  50% {
+    transform: perspective(420px) rotateY(18deg) rotateX(8deg) skewX(-2deg);
+  }
+  75% {
+    transform: perspective(420px) rotateY(-22deg) rotateX(-6deg) skewX(3deg);
+  }
+}
+
+.bill-fall {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  animation: bill-fall var(--bill-duration, 12s) linear infinite;
+  animation-delay: var(--bill-delay, 0s);
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+}
+.bill-fall .bill-flutter {
+  animation: bill-flutter var(--bill-flutter-dur, 2.4s) ease-in-out infinite;
+  transform-origin: center;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .bill-fall {
+    opacity: 0.35;
+  }
+
+  .marquee-track {
+    animation-duration: 42s;
+  }
 }
