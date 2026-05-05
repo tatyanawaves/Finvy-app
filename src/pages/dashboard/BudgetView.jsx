@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useState } from 'react'
-import { useBudget, currentMonthKey, shiftMonth } from '../../hooks/useBudget'
+import { useBudget, currentMonthKey, shiftMonth, rolloverMonth } from '../../hooks/useBudget'
 import { generateBudgetProposal, applyBudgetProposal } from '../../lib/budgetAI'
 
 const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
@@ -401,6 +401,7 @@ export default function BudgetView({ userId, demo, demoData }) {
   const [editing, setEditing] = useState(null)
   const [showAIProposal, setShowAIProposal] = useState(false)
   const [appliedToast, setAppliedToast] = useState(null)
+  const [rollingOver, setRollingOver] = useState(false)
   const live = useBudget(month, { userId: demo ? null : userId })
 
   // In demo mode, compute everything locally from demoData
@@ -430,6 +431,22 @@ export default function BudgetView({ userId, demo, demoData }) {
     await remove(row.id)
   }
 
+  const handleRollover = async () => {
+    const prevMonth = shiftMonth(month, -1)
+    if (!confirm(`Перенести остатки с ${formatMonthLabel(prevMonth)} → ${formatMonthLabel(month)}?`)) return
+    setRollingOver(true)
+    const res = await rolloverMonth({ userId, fromMonth: prevMonth, toMonth: month })
+    setRollingOver(false)
+    if (res.error) {
+      setAppliedToast(`Ошибка: ${res.error}`)
+    } else {
+      const count = (res.items || []).length
+      setAppliedToast(`Перенесено ${count} ${count === 1 ? 'категория' : 'категорий'}`)
+      if (typeof live?.reload === 'function') live.reload()
+    }
+    setTimeout(() => setAppliedToast(null), 4000)
+  }
+
   const overCount = rows.filter(r => r.status === 'over' && !r.unbudgeted).length
   const warningCount = rows.filter(r => r.status === 'warning').length
 
@@ -447,14 +464,27 @@ export default function BudgetView({ userId, demo, demoData }) {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {!isDemo && (
-              <button
-                onClick={() => setShowAIProposal(true)}
-                className="flex items-center gap-1.5 bg-mint/15 hover:bg-mint/25 border border-mint/30 text-mint text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                title="Сгенерировать бюджет на основе истории"
-              >
-                <span className="text-base leading-none">✦</span>
-                <span>AI-бюджет</span>
-              </button>
+              <>
+                <button
+                  onClick={handleRollover}
+                  disabled={rollingOver}
+                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 hover:text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                  title="Перенести неиспользованные остатки с предыдущего месяца"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
+                  </svg>
+                  <span>{rollingOver ? 'Переношу…' : 'Перенос'}</span>
+                </button>
+                <button
+                  onClick={() => setShowAIProposal(true)}
+                  className="flex items-center gap-1.5 bg-mint/15 hover:bg-mint/25 border border-mint/30 text-mint text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  title="Сгенерировать бюджет на основе истории"
+                >
+                  <span className="text-base leading-none">✦</span>
+                  <span>AI-бюджет</span>
+                </button>
+              </>
             )}
             <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
               <button
