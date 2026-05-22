@@ -306,119 +306,17 @@ function AddCategoryForm({ existingCategories, onAdd }) {
   )
 }
 
-// ─── Demo data (used when user is not authenticated, /demo route) ────────────
-const DEMO_BUDGETS = [
-  { category: 'Продукты',      planned: 60000,  notes: 'Magnum + Galmart' },
-  { category: 'Рестораны',     planned: 35000,  notes: 'кафе и доставка' },
-  { category: 'Топливо',       planned: 40000,  notes: '' },
-  { category: 'Транспорт',     planned: 15000,  notes: 'такси, автобусы' },
-  { category: 'Одежда',        planned: 30000,  notes: '' },
-  { category: 'Развлечения',   planned: 20000,  notes: '' },
-  { category: 'Здоровье',      planned: 25000,  notes: 'аптека, врачи' },
-  { category: 'Реклама',       planned: 80000,  notes: 'Instagram + Google' },
-  { category: 'Налоги',        planned: 210000, notes: 'ИПН + ОПВ' },
-  { category: 'Закуп товаров', planned: 300000, notes: '' },
-  { category: 'Логистика',     planned: 60000,  notes: '' },
-  { category: 'Аренда',        planned: 120000, notes: 'офис' },
-]
-
-function buildDemoState({ demoData, month }) {
-  // Compute spent per category for the given month from demo transactions
-  const [yearStr, monthStr] = month.split('-')
-  const spent = {}
-  let income = 0
-  for (const tx of demoData || []) {
-    const txMonth = (tx.date || '').slice(0, 7)
-    if (txMonth !== month) continue
-    if (tx.type === 'expense') {
-      const cat = tx.category || 'Другое'
-      spent[cat] = (spent[cat] || 0) + Math.abs(Number(tx.amount) || 0)
-    } else if (tx.type === 'income') {
-      income += Math.abs(Number(tx.amount) || 0)
-    }
-  }
-  // Build rows
-  const seen = new Set()
-  const rows = []
-  for (const b of DEMO_BUDGETS) {
-    seen.add(b.category)
-    const cap = b.planned
-    const sp = spent[b.category] || 0
-    const remaining = cap - sp
-    const percentUsed = cap > 0 ? sp / cap : 0
-    rows.push({
-      id: `demo-${b.category}`,
-      category: b.category,
-      planned: b.planned,
-      rolloverIn: 0,
-      cap,
-      spent: sp,
-      remaining,
-      percentUsed,
-      status: remaining < 0 ? 'over' : (percentUsed >= 0.9 ? 'warning' : 'ok'),
-      notes: b.notes,
-      rolloverEnabled: true,
-      unbudgeted: false,
-    })
-  }
-  for (const [cat, sp] of Object.entries(spent)) {
-    if (seen.has(cat)) continue
-    rows.push({
-      id: null,
-      category: cat,
-      planned: 0,
-      rolloverIn: 0,
-      cap: 0,
-      spent: sp,
-      remaining: -sp,
-      percentUsed: 1,
-      status: 'over',
-      notes: '',
-      rolloverEnabled: true,
-      unbudgeted: true,
-    })
-  }
-  rows.sort((a, b) => {
-    const order = { over: 0, warning: 1, ok: 2 }
-    const so = order[a.status] - order[b.status]
-    if (so !== 0) return so
-    return b.planned - a.planned
-  })
-  const totalPlanned = rows.reduce((s, r) => s + r.planned, 0)
-  const totalSpent = rows.reduce((s, r) => s + r.spent, 0)
-  const totalRemaining = totalPlanned - totalSpent
-  return {
-    rows,
-    totals: { planned: totalPlanned, spent: totalSpent, remaining: totalRemaining, rolloverIn: 0 },
-    monthIncome: income,
-    toBudget: income - totalPlanned,
-  }
-}
-
-// ─── Main view ───────────────────────────────────────────────────────────────
-export default function BudgetView({ userId, demo, demoData }) {
+// Main view
+export default function BudgetView({ userId, profileType = 'business' }) {
   const [month, setMonth] = useState(currentMonthKey())
+  const isPersonal = profileType === 'personal'
   const [editing, setEditing] = useState(null)
   const [showAIProposal, setShowAIProposal] = useState(false)
   const [appliedToast, setAppliedToast] = useState(null)
   const [rollingOver, setRollingOver] = useState(false)
-  const live = useBudget(month, { userId: demo ? null : userId })
+  const live = useBudget(month, { userId })
 
-  // In demo mode, compute everything locally from demoData
-  const isDemo = !!demo
-  const demoState = useMemo(
-    () => isDemo ? buildDemoState({ demoData, month }) : null,
-    [isDemo, demoData, month]
-  )
-
-  const rows         = isDemo ? demoState.rows         : live.rows
-  const totals       = isDemo ? demoState.totals       : live.totals
-  const monthIncome  = isDemo ? demoState.monthIncome  : live.monthIncome
-  const toBudget     = isDemo ? demoState.toBudget     : live.toBudget
-  const loading      = isDemo ? false                  : live.loading
-  const error        = isDemo ? null                   : live.error
-  const save         = isDemo ? (async () => ({ error: 'В демо-режиме изменения не сохраняются' })) : live.save
-  const remove       = isDemo ? (async () => ({ error: 'В демо-режиме изменения не сохраняются' })) : live.remove
+  const { rows, totals, monthIncome, toBudget, loading, error, save, remove } = live
 
   const existingCategories = useMemo(
     () => rows.filter(r => !r.unbudgeted).map(r => r.category),
@@ -457,15 +355,13 @@ export default function BudgetView({ userId, demo, demoData }) {
         {/* ── Header: month switcher + label ── */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div>
-            <h2 className="text-white font-semibold text-lg sm:text-xl">Бюджет</h2>
+            <h2 className="text-white font-semibold text-lg sm:text-xl">{isPersonal ? 'Личный бюджет' : 'Бюджет'}</h2>
             <p className="text-white/40 text-xs sm:text-sm mt-0.5">
-              Сколько ещё можно потратить из запланированного
+              {isPersonal ? 'Планируйте личные траты и регулярные платежи' : 'Сколько ещё можно потратить из запланированного'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {!isDemo && (
-              <>
-                <button
+<button
                   onClick={handleRollover}
                   disabled={rollingOver}
                   className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 hover:text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
@@ -484,8 +380,6 @@ export default function BudgetView({ userId, demo, demoData }) {
                   <span className="text-base leading-none">✦</span>
                   <span>AI-бюджет</span>
                 </button>
-              </>
-            )}
             <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
               <button
                 onClick={() => setMonth(shiftMonth(month, -1))}

@@ -1,5 +1,4 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import BudgetAlertWidget from './BudgetAlertWidget'
@@ -48,11 +47,12 @@ const typeBg = {
 const CURRENCY_SYMBOL = { USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }
 const symOf = (c) => CURRENCY_SYMBOL[c] || (c || '')
 
-export default function TransactionsView({ userId, refreshKey, accounts, currency = 'USD', demoData }) {
-  const { pathname } = useLocation()
-  const basePath = pathname.startsWith('/demo') ? '/demo' : '/dashboard'
+export default function TransactionsView({ userId, refreshKey, accounts, currency = 'USD', profileType = 'business' }) {
+  const basePath = '/dashboard'
   const { t, lang } = useLanguage()
   const sym = symOf(currency)
+  const isPersonal = profileType === 'personal'
+  const netLabel = isPersonal ? 'Остаток' : t.profit
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('all')
@@ -63,29 +63,19 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
 
-    let data
-    if (demoData) {
-      // Filter demo data locally
-      data = [...demoData].sort((a, b) => b.date.localeCompare(a.date))
-      const fromDate = getPeriodDates(period)
-      if (fromDate) data = data.filter(t => t.date >= fromDate)
-      if (typeFilter !== 'all') data = data.filter(t => t.type === typeFilter)
-      if (search.trim()) data = data.filter(t => t.description?.toLowerCase().includes(search.trim().toLowerCase()))
-    } else {
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false })
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
 
-      const fromDate = getPeriodDates(period)
-      if (fromDate) query = query.gte('date', fromDate)
-      if (typeFilter !== 'all') query = query.eq('type', typeFilter)
-      if (search.trim()) query = query.ilike('description', `%${search.trim()}%`)
+    const fromDate = getPeriodDates(period)
+    if (fromDate) query = query.gte('date', fromDate)
+    if (typeFilter !== 'all') query = query.eq('type', typeFilter)
+    if (search.trim()) query = query.ilike('description', `%${search.trim()}%`)
 
-      const res = await query.limit(200)
-      data = res.data
-    }
+    const res = await query.limit(200)
+    const data = res.data
 
     if (data) {
       setTransactions(data)
@@ -94,7 +84,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
       setSummary({ income: inc, expense: exp, profit: inc - exp })
     }
     setLoading(false)
-  }, [userId, period, typeFilter, search, refreshKey, demoData])
+  }, [userId, period, typeFilter, search, refreshKey])
 
   useEffect(() => {
     fetchTransactions()
@@ -120,7 +110,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Budget alert widget — shown only when there are critical/warning categories */}
-      <BudgetAlertWidget userId={userId} demo={!!demoData} basePath={basePath} />
+      <BudgetAlertWidget userId={userId} demo={false} basePath={basePath} />
 
       {/* Summary bar */}
       <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-6 py-3 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none">
@@ -135,7 +125,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
         </div>
         <div className="hidden sm:block w-px h-8 bg-white/5" />
         <div className="min-w-[88px]">
-          <p className="text-white/30 text-xs mb-0.5">{t.profit}</p>
+          <p className="text-white/30 text-xs mb-0.5">{netLabel}</p>
           <p className={`font-bold text-sm ${summary.profit >= 0 ? 'text-mint' : 'text-red-400'}`}>
             {sym}{summary.profit >= 0 ? '+' : '−'}{Math.abs(summary.profit).toLocaleString('en', { maximumFractionDigits: 0 })}
           </p>

@@ -55,8 +55,10 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function ReportsView({ userId, demoData }) {
+export default function ReportsView({ userId, profileType = 'business' }) {
   const { t } = useLanguage()
+  const isPersonal = profileType === 'personal'
+  const netLabel = isPersonal ? 'Остаток' : t.reportProfit
   const [showCashback, setShowCashback] = useState(false)
   const [showImport, setShowImport] = useState(false)
 
@@ -84,23 +86,13 @@ export default function ReportsView({ userId, demoData }) {
 
     setLoading(true)
 
-    let txs
-    if (demoData) {
-      txs = demoData.filter(t =>
-        ['income', 'expense'].includes(t.type) &&
-        t.date >= dates.from + 'T00:00:00' &&
-        t.date <= dates.to + 'T23:59:59'
-      )
-    } else {
-      const { data: fetched } = await supabase
-        .from('transactions')
-        .select('type, amount, date, category')
-        .eq('user_id', userId)
-        .gte('date', dates.from + 'T00:00:00')
-        .lte('date', dates.to + 'T23:59:59')
-        .in('type', ['income', 'expense'])
-      txs = fetched
-    }
+    const { data: txs } = await supabase
+      .from('transactions')
+      .select('type, amount, date, category')
+      .eq('user_id', userId)
+      .gte('date', dates.from + 'T00:00:00')
+      .lte('date', dates.to + 'T23:59:59')
+      .in('type', ['income', 'expense'])
 
     if (!txs) { setLoading(false); return }
 
@@ -135,7 +127,7 @@ export default function ReportsView({ userId, demoData }) {
     setData(dayArr)
 
     setLoading(false)
-  }, [userId, demoData, preset, customFrom, customTo])
+  }, [userId, preset, customFrom, customTo])
 
   useEffect(() => { fetchReport() }, [fetchReport])
 
@@ -226,7 +218,7 @@ export default function ReportsView({ userId, demoData }) {
               {[
                 { label: t.reportIncome,  value: summary.income,  color: 'text-mint',    bg: 'bg-mint/5 border-mint/10' },
                 { label: t.reportExpense, value: summary.expense, color: 'text-red-400', bg: 'bg-red-500/5 border-red-500/10' },
-                { label: t.reportProfit,  value: summary.profit,  color: summary.profit >= 0 ? 'text-mint' : 'text-red-400', bg: 'bg-white/5 border-white/5' },
+                { label: netLabel,  value: summary.profit,  color: summary.profit >= 0 ? 'text-mint' : 'text-red-400', bg: 'bg-white/5 border-white/5' },
                 { label: t.reportTxCount, value: summary.count,   color: 'text-white/70', bg: 'bg-white/5 border-white/5', plain: true },
               ].map(card => (
                 <div key={card.label} className={`rounded-xl p-4 border ${card.bg}`}>
@@ -275,7 +267,7 @@ export default function ReportsView({ userId, demoData }) {
                     <div className="space-y-0 min-w-[560px]">
                       {/* Header */}
                       <div className="grid grid-cols-[1fr_100px_100px_100px] gap-4 pb-2 border-b border-white/5 mb-1">
-                        {[t.category, t.reportIncome, t.reportExpense, t.reportProfit].map(h => (
+                        {[t.category, t.reportIncome, t.reportExpense, netLabel].map(h => (
                           <p key={h} className="text-white/30 text-xs font-semibold uppercase tracking-wider">{h}</p>
                         ))}
                       </div>
@@ -309,7 +301,6 @@ export default function ReportsView({ userId, demoData }) {
     {showImport && (
       <ImportStatementModal
         userId={userId}
-        demo={!!demoData}
         onImported={fetchReport}
         onClose={() => setShowImport(false)}
       />

@@ -51,7 +51,7 @@ function calcFromNet(net) {
 
 const toNumber = (value) => parseInt(String(value || '').replace(/\D/g, ''), 10) || 0
 
-export default function PayrollCalculator({ userId = 'demo', currency = 'KZT', onPlannedChange }) {
+export default function PayrollCalculator({ userId, currency = 'KZT', onPlannedChange }) {
   const { lang } = useLanguage()
   const isRu = lang !== 'en'
   const [employees, setEmployees] = useState(DEFAULT_EMPLOYEES)

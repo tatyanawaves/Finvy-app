@@ -1,0 +1,970 @@
+{
+  "slides": [
+    {
+      "slide": 1,
+      "texts": [
+        "Investor pitch 2026",
+        "Finvy",
+        "AI-ассистент для денег бизнеса",
+        "Помогаем вести финансовый учет малому исреднему бизнесу в период взрывного роста",
+        "ДЕМО",
+        "live",
+        "ФОКУС",
+        "B2B",
+        "ГЕОГРАФИЯ",
+        "KZ+",
+        "Демо продукта",
+        "finvy-ai.vercel.app"
+      ]
+    },
+    {
+      "slide": 2,
+      "texts": [
+        "02",
+        "Проблема МСБ: деньги есть,  целостной картины финансов — нет",
+        "Excel и ручной учет",
+        "данные расходятся, отчеты устаревают",
+        "Счета и наличные разрознены",
+        "нет единой картины по банкам и кассе",
+        "Налоговые сроки держатся в голове",
+        "штрафы появляются без прогноза",
+        "AI без данных бесполезен",
+        "LLM не видит чистую историю операций",
+        "Возможность",
+        "Малому бизнесу нужен финансовый cockpit: видеть деньги, понимать риски и получать прогноз на завтра.",
+        "Данные в разных местах",
+        "банки + наличные",
+        "Ручная категоризация",
+        "ошибки и задержка",
+        "Налоги видны поздно",
+        "cash-flow риск",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0; демо Finvy"
+      ]
+    },
+    {
+      "slide": 3,
+      "texts": [
+        "01",
+        "Cобираем платежи в единую картину",
+        "Finvy - сервис для МСБ: транзакции, счета, аналитика, отчеты и cashback, налоги и AI-инсайты в одном интерфейсе.",
+        "Счета",
+        "kaspi, halyk, наличные",
+        "Транзакции",
+        "доходы, расходы",
+        "P&L",
+        "денежный поток",
+        "AI",
+        "риски и прогноз",
+        "СЕЙЧАС В ДЕМО",
+        "9 модулей",
+        "операции, аналитика, AI, отчеты, налоги",
+        "ЦЕЛЬ",
+        "AISP",
+        "информация о счетах через Open API контур РК",
+        "Finvy | Investor pitch | 2026",
+        "Источник: finvy-ai.vercel.app; коммерческий план Finvy 2.0"
+      ]
+    },
+    {
+      "slide": 4,
+      "texts": [
+        "03",
+        "От выписки к управленческому решению",
+        "Автосбор",
+        "все счета и транзакции в одном окне",
+        "Категории",
+        "расходы, налоги, зарплата, закуп",
+        "AI-инсайты",
+        "рост, аномалии и следующий шаг",
+        "Отчет",
+        "P&L, cash flow, налоговый календарь",
+        "Главный результат: владелец перестает спрашивать «куда ушли деньги?» и заранее управляет маржой, налогами и кассовыми разрывами.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: finvy-ai.vercel.app/demo/analytics"
+      ]
+    },
+    {
+      "slide": 5,
+      "texts": [
+        "04",
+        "Масштабируемая боль МСБ",
+        "ТАМ",
+        "2,3 млн+",
+        "субъектов МСБ",
+        "ВКЛАД МСБ",
+        "40,5%",
+        "доля в ВВП",
+        "ПРОДАЖИ",
+        "B2B",
+        "регулярные платежи",
+        "TAM -> SAM -> SOM",
+        "TAM",
+        "Малый и средний бизнес Казахстана",
+        "SAM",
+        "регулярные счета и налоговые задачи",
+        "SOM",
+        "Первые цифровые предприниматели",
+        "Почему market-fit правдоподобен",
+        "1. В демо уже отражена операционная картина бизнеса.2. Open API снижает ручной ввод и повышает доверие.",
+        "Finvy | Investor pitch | 2026",
+        "Источники: stat.gov.kz; commercial plan Finvy 2.0",
+        "2,3 млн +",
+        "~5000клиентов",
+        "~1500клиентов"
+      ]
+    },
+    {
+      "slide": 6,
+      "texts": [
+        "05",
+        "Банковский контур + маскирование + AI",
+        "Open API / AISP",
+        "счета и операции без платежной инициации",
+        "VPC в РК",
+        "ключи и данные в защищенном контуре",
+        "Маскирование",
+        "ФИО и счета заменяются токенами",
+        "AI-router",
+        "LLM получает только обезличенный контекст",
+        "Действия",
+        "риски, сроки, прогноз, отчет",
+        "Enterprise",
+        "Private subnets, Managed PostgreSQL, Keycloak, Cloud KMS, Wazuh/Elastic, аудит ИБ и локализация данных в РК. База доверия для банковского и B2B-рынка.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0; Единая платформа Open API НПК"
+      ]
+    },
+    {
+      "slide": 7,
+      "texts": [
+        "06",
+        "Finvy выигрывает у разрозненного стека",
+        "Критерий",
+        "Excel",
+        "1C/бухгалтерия",
+        "Банки",
+        "Expense apps",
+        "Finvy",
+        "Единое окно по счетам",
+        "–",
+        "–",
+        "•",
+        "•",
+        "✓",
+        "P&L и cash flow",
+        "•",
+        "•",
+        "–",
+        "•",
+        "✓",
+        "AI-инсайты по операциям",
+        "–",
+        "–",
+        "–",
+        "•",
+        "✓",
+        "Налоги и сроки",
+        "•",
+        "•",
+        "–",
+        "–",
+        "✓",
+        "Демо без регистрации",
+        "–",
+        "–",
+        "–",
+        "•",
+        "✓",
+        "Open API roadmap",
+        "–",
+        "•",
+        "•",
+        "•",
+        "✓",
+        "Позиция",
+        "Finvy - операционный слой поверх банков и бухгалтерии: не заменяет учет, а дает владельцу ежедневную управленческую картину и действия.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: продуктовая карта Finvy; коммерческий план Finvy 2.0"
+      ]
+    },
+    {
+      "slide": 8,
+      "texts": [
+        "07",
+        "B2B-подписка сейчас, enterprise потом",
+        "Starter",
+        "3 800 ₸",
+        "микробизнес",
+        "✓ 1 пользователь",
+        "✓ Cash Flow",
+        "✓ Telegram-бот",
+        "✓ AI-поддержка",
+        "основной B2B",
+        "Business",
+        "7 500 ₸",
+        "небольшие команды",
+        "✓ 3 пользователя",
+        "✓ Cash Flow + P&L",
+        "✓ Telegram-бот",
+        "✓ AI + чат поддержки",
+        "Corporate",
+        "договорная",
+        "крупный бизнес",
+        "✓ безлимит пользователей",
+        "✓ индивидуальные метрики",
+        "✓ приоритетная поддержка",
+        "✓ интеграции",
+        "BREAK-EVEN СЦЕНАРИЙ",
+        "~790",
+        "платящих пользователей",
+        "СРЕДНИЙ B2B ЧЕК",
+        "7 500 ₸",
+        "публичный тариф Business",
+        "ENTERPRISE UPSIDE",
+        "custom",
+        "интеграции, роли, отчеты",
+        "ПЛАТЕЖИ",
+        "Freedom",
+        "Pay; платежи не инициируем",
+        "Finvy | Investor pitch | 2026",
+        "Источники: finvy-ai.vercel.app/#pricing; коммерческий план Finvy 2.0"
+      ]
+    },
+    {
+      "slide": 9,
+      "texts": [
+        "08",
+        "Масштабирование по Казахстану",
+        "M1-M3",
+        "MVP + ранний доступ",
+        "PDF-выписки, ручной ввод, Telegram-чеки, первые компании ВКО",
+        "M4-M6",
+        "Open API готовность",
+        "контур РК, комплаенс, аудит ИБ, уведомление/реестр",
+        "M7-M9",
+        "B2B продажи",
+        "пакеты для ИП/ТОО, бухгалтеры как канал, демо без регистрации",
+        "M10-M12",
+        "Рост по KZ",
+        "кампании, партнерства, enterprise отчеты и роли",
+        "Каналы",
+        "ВКО",
+        "личные продажи и локальные кейсы",
+        "Бухгалтеры",
+        "реферальный канал к ИП/ТОО",
+        "Демо",
+        "снижает барьер входа",
+        "Open API",
+        "доверие для B2B-сегмента",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0; сайт Finvy"
+      ]
+    },
+    {
+      "slide": 10,
+      "texts": [
+        "09",
+        "Команда: продукт, ИБ и B2B-продажи",
+        "Основатель",
+        "видение продукта, сегмент, UX, первые пилоты",
+        "Backend / ИБ",
+        "Kubernetes, VPC, Keycloak, mTLS, НПК",
+        "B2B-продажи",
+        "локальные пилоты, воронка, партнеры",
+        "Право / финансы",
+        "персональные данные, аудит ИБ, Astana Hub",
+        "Ключевая роль",
+        "Backend/DevOps/ИБ: 960 000 - 1 440 000 тг полной стоимости в месяц. Это ядро аудита, Open API интеграции и надежной работы продукта.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0"
+      ]
+    },
+    {
+      "slide": 11,
+      "texts": [
+        "10",
+        "Управляемый OPEX и путь к окупаемости",
+        "OPEX С МАРКЕТИНГОМ",
+        "1,83-2,78 млн ₸",
+        "месячный диапазон",
+        "СТАРТОВЫЙ КАПИТАЛ",
+        "7,33-11,94 млн ₸",
+        "аудит ИБ, оборудование, runway",
+        "БАЗА ОКУПАЕМОСТИ",
+        "~250 B2B + 540 B2C",
+        "break-even сценарий",
+        "Основные статьи расходов заранее понятны - команда, инфраструктура РК, комплаенс и маркетинг.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0"
+      ]
+    },
+    {
+      "slide": 12,
+      "texts": [
+        "11",
+        "Запрос: compliance, инфраструктура, продажи",
+        "Нужно привлечь",
+        "210 000$",
+        "диапазон стартового капитала: юридическое оформление, аудит ИБ, оборудование, контент и 3 месяца runway.",
+        "Демо продукта",
+        "finvy-ai.vercel.app",
+        "Распределение средств",
+        "Runway 3 мес.",
+        "60%",
+        "Аудит ИБ + юристы",
+        "15%",
+        "Оборудование",
+        "12%",
+        "Маркетинг + контент",
+        "8%",
+        "Резерв",
+        "5%",
+        "Вехи",
+        "01",
+        "Платные пилоты",
+        "первые B2B клиенты",
+        "02",
+        "Аудит ИБ",
+        "готовность к контуру",
+        "03",
+        "Open API контур",
+        "AISP-модель",
+        "04",
+        "Повторяемые продажи",
+        "воронка и удержание",
+        "Сейчас",
+        "Демо показывает ценность; следующий риск - банковскийконтур, безопасность и повторяемые продажи.",
+        "Finvy | Investor pitch | 2026",
+        "Источник: коммерческий план Finvy 2.0; https://finvy-ai.vercel.app/"
+      ]
+    }
+  ],
+  "media": [
+    {
+      "name": "ppt/media/image1.png",
+      "size": 1815,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image1.png"
+    },
+    {
+      "name": "ppt/media/image2.svg",
+      "size": 1064,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image2.svg"
+    },
+    {
+      "name": "ppt/media/image3.png",
+      "size": 1584,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image3.png"
+    },
+    {
+      "name": "ppt/media/image4.svg",
+      "size": 970,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image4.svg"
+    },
+    {
+      "name": "ppt/media/image5.png",
+      "size": 11464,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image5.png"
+    },
+    {
+      "name": "ppt/media/image6.png",
+      "size": 1694,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image6.png"
+    },
+    {
+      "name": "ppt/media/image7.svg",
+      "size": 972,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image7.svg"
+    },
+    {
+      "name": "ppt/media/image8.png",
+      "size": 1448,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image8.png"
+    },
+    {
+      "name": "ppt/media/image9.svg",
+      "size": 1045,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image9.svg"
+    },
+    {
+      "name": "ppt/media/image10.png",
+      "size": 1539,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image10.png"
+    },
+    {
+      "name": "ppt/media/image11.png",
+      "size": 1007,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image11.png"
+    },
+    {
+      "name": "ppt/media/image12.png",
+      "size": 1416,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image12.png"
+    },
+    {
+      "name": "ppt/media/image13.svg",
+      "size": 1045,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image13.svg"
+    },
+    {
+      "name": "ppt/media/image14.png",
+      "size": 2518,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image14.png"
+    },
+    {
+      "name": "ppt/media/image15.png",
+      "size": 3235,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image15.png"
+    },
+    {
+      "name": "ppt/media/image16.png",
+      "size": 4380,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image16.png"
+    },
+    {
+      "name": "ppt/media/image17.svg",
+      "size": 968,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image17.svg"
+    },
+    {
+      "name": "ppt/media/image18.jpeg",
+      "size": 43964,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image18.jpeg"
+    },
+    {
+      "name": "ppt/media/image19.jpeg",
+      "size": 21932,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image19.jpeg"
+    },
+    {
+      "name": "ppt/media/image20.png",
+      "size": 4991,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image20.png"
+    },
+    {
+      "name": "ppt/media/image21.svg",
+      "size": 976,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image21.svg"
+    },
+    {
+      "name": "ppt/media/image22.png",
+      "size": 245407,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image22.png"
+    },
+    {
+      "name": "ppt/media/image23.png",
+      "size": 1496,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image23.png"
+    },
+    {
+      "name": "ppt/media/image24.svg",
+      "size": 1056,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image24.svg"
+    },
+    {
+      "name": "ppt/media/image25.png",
+      "size": 1844,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image25.png"
+    },
+    {
+      "name": "ppt/media/image26.png",
+      "size": 1661,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image26.png"
+    },
+    {
+      "name": "ppt/media/image27.svg",
+      "size": 1056,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image27.svg"
+    },
+    {
+      "name": "ppt/media/image28.png",
+      "size": 2065,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image28.png"
+    },
+    {
+      "name": "ppt/media/image29.png",
+      "size": 1622,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image29.png"
+    },
+    {
+      "name": "ppt/media/image30.svg",
+      "size": 1056,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image30.svg"
+    },
+    {
+      "name": "ppt/media/image31.png",
+      "size": 2185,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image31.png"
+    },
+    {
+      "name": "ppt/media/image32.png",
+      "size": 1463,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image32.png"
+    },
+    {
+      "name": "ppt/media/image33.svg",
+      "size": 1056,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image33.svg"
+    },
+    {
+      "name": "ppt/media/image34.png",
+      "size": 2281,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image34.png"
+    },
+    {
+      "name": "ppt/media/image35.png",
+      "size": 1793,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image35.png"
+    },
+    {
+      "name": "ppt/media/image36.svg",
+      "size": 968,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image36.svg"
+    },
+    {
+      "name": "ppt/media/image37.png",
+      "size": 4666,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image37.png"
+    },
+    {
+      "name": "ppt/media/image38.svg",
+      "size": 962,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image38.svg"
+    },
+    {
+      "name": "ppt/media/image39.png",
+      "size": 127225,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image39.png"
+    },
+    {
+      "name": "ppt/media/image40.png",
+      "size": 1757,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image40.png"
+    },
+    {
+      "name": "ppt/media/image41.svg",
+      "size": 988,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image41.svg"
+    },
+    {
+      "name": "ppt/media/image42.png",
+      "size": 1580,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image42.png"
+    },
+    {
+      "name": "ppt/media/image43.svg",
+      "size": 1096,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image43.svg"
+    },
+    {
+      "name": "ppt/media/image44.png",
+      "size": 2824,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image44.png"
+    },
+    {
+      "name": "ppt/media/image45.png",
+      "size": 2526,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image45.png"
+    },
+    {
+      "name": "ppt/media/image46.png",
+      "size": 1716,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image46.png"
+    },
+    {
+      "name": "ppt/media/image47.svg",
+      "size": 988,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image47.svg"
+    },
+    {
+      "name": "ppt/media/image48.png",
+      "size": 1771,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image48.png"
+    },
+    {
+      "name": "ppt/media/image49.svg",
+      "size": 1096,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image49.svg"
+    },
+    {
+      "name": "ppt/media/image50.png",
+      "size": 2317,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image50.png"
+    },
+    {
+      "name": "ppt/media/image51.png",
+      "size": 1936,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image51.png"
+    },
+    {
+      "name": "ppt/media/image52.png",
+      "size": 1675,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image52.png"
+    },
+    {
+      "name": "ppt/media/image53.svg",
+      "size": 973,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image53.svg"
+    },
+    {
+      "name": "ppt/media/image54.png",
+      "size": 2715,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image54.png"
+    },
+    {
+      "name": "ppt/media/image55.svg",
+      "size": 958,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image55.svg"
+    },
+    {
+      "name": "ppt/media/image56.png",
+      "size": 2208,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image56.png"
+    },
+    {
+      "name": "ppt/media/image57.svg",
+      "size": 973,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image57.svg"
+    },
+    {
+      "name": "ppt/media/image58.png",
+      "size": 1636,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image58.png"
+    },
+    {
+      "name": "ppt/media/image59.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image59.svg"
+    },
+    {
+      "name": "ppt/media/image60.png",
+      "size": 1773,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image60.png"
+    },
+    {
+      "name": "ppt/media/image61.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image61.svg"
+    },
+    {
+      "name": "ppt/media/image62.png",
+      "size": 1784,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image62.png"
+    },
+    {
+      "name": "ppt/media/image63.png",
+      "size": 2176,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image63.png"
+    },
+    {
+      "name": "ppt/media/image64.svg",
+      "size": 973,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image64.svg"
+    },
+    {
+      "name": "ppt/media/image65.png",
+      "size": 1717,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image65.png"
+    },
+    {
+      "name": "ppt/media/image66.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image66.svg"
+    },
+    {
+      "name": "ppt/media/image67.png",
+      "size": 2754,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image67.png"
+    },
+    {
+      "name": "ppt/media/image68.png",
+      "size": 1680,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image68.png"
+    },
+    {
+      "name": "ppt/media/image69.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image69.svg"
+    },
+    {
+      "name": "ppt/media/image70.png",
+      "size": 1790,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image70.png"
+    },
+    {
+      "name": "ppt/media/image71.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image71.svg"
+    },
+    {
+      "name": "ppt/media/image72.png",
+      "size": 1898,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image72.png"
+    },
+    {
+      "name": "ppt/media/image73.png",
+      "size": 2082,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image73.png"
+    },
+    {
+      "name": "ppt/media/image74.svg",
+      "size": 978,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image74.svg"
+    },
+    {
+      "name": "ppt/media/image75.png",
+      "size": 1471,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image75.png"
+    },
+    {
+      "name": "ppt/media/image76.svg",
+      "size": 956,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image76.svg"
+    },
+    {
+      "name": "ppt/media/image77.png",
+      "size": 1524,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image77.png"
+    },
+    {
+      "name": "ppt/media/image78.svg",
+      "size": 956,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image78.svg"
+    },
+    {
+      "name": "ppt/media/image79.png",
+      "size": 2086,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image79.png"
+    },
+    {
+      "name": "ppt/media/image80.svg",
+      "size": 961,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image80.svg"
+    },
+    {
+      "name": "ppt/media/image81.png",
+      "size": 2894,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image81.png"
+    },
+    {
+      "name": "ppt/media/image82.svg",
+      "size": 964,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image82.svg"
+    },
+    {
+      "name": "ppt/media/image83.png",
+      "size": 2963,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image83.png"
+    },
+    {
+      "name": "ppt/media/image84.svg",
+      "size": 964,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image84.svg"
+    },
+    {
+      "name": "ppt/media/image85.png",
+      "size": 1561,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image85.png"
+    },
+    {
+      "name": "ppt/media/image86.svg",
+      "size": 1062,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image86.svg"
+    },
+    {
+      "name": "ppt/media/image87.png",
+      "size": 1620,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image87.png"
+    },
+    {
+      "name": "ppt/media/image88.svg",
+      "size": 968,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image88.svg"
+    },
+    {
+      "name": "ppt/media/image89.png",
+      "size": 2413,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image89.png"
+    },
+    {
+      "name": "ppt/media/image90.svg",
+      "size": 968,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image90.svg"
+    },
+    {
+      "name": "ppt/media/image91.png",
+      "size": 2393,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image91.png"
+    },
+    {
+      "name": "ppt/media/image92.svg",
+      "size": 968,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image92.svg"
+    },
+    {
+      "name": "ppt/media/image93.png",
+      "size": 1355,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image93.png"
+    },
+    {
+      "name": "ppt/media/image94.svg",
+      "size": 1045,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image94.svg"
+    },
+    {
+      "name": "ppt/media/image95.png",
+      "size": 1918,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image95.png"
+    },
+    {
+      "name": "ppt/media/image96.png",
+      "size": 1485,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image96.png"
+    },
+    {
+      "name": "ppt/media/image97.svg",
+      "size": 1045,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image97.svg"
+    },
+    {
+      "name": "ppt/media/image98.png",
+      "size": 2246,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image98.png"
+    },
+    {
+      "name": "ppt/media/image99.png",
+      "size": 2016,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image99.png"
+    },
+    {
+      "name": "ppt/media/image100.png",
+      "size": 1416,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image100.png"
+    },
+    {
+      "name": "ppt/media/image101.svg",
+      "size": 1045,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image101.svg"
+    },
+    {
+      "name": "ppt/media/image102.png",
+      "size": 2220,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image102.png"
+    },
+    {
+      "name": "ppt/media/image103.png",
+      "size": 2024,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image103.png"
+    },
+    {
+      "name": "ppt/media/image104.svg",
+      "size": 967,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image104.svg"
+    },
+    {
+      "name": "ppt/media/image105.png",
+      "size": 1665,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image105.png"
+    },
+    {
+      "name": "ppt/media/image106.png",
+      "size": 1997,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image106.png"
+    },
+    {
+      "name": "ppt/media/image107.svg",
+      "size": 967,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image107.svg"
+    },
+    {
+      "name": "ppt/media/image108.png",
+      "size": 1431,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image108.png"
+    },
+    {
+      "name": "ppt/media/image109.png",
+      "size": 1994,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image109.png"
+    },
+    {
+      "name": "ppt/media/image110.png",
+      "size": 2613,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image110.png"
+    },
+    {
+      "name": "ppt/media/image111.png",
+      "size": 2118,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image111.png"
+    },
+    {
+      "name": "ppt/media/image112.svg",
+      "size": 978,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image112.svg"
+    },
+    {
+      "name": "ppt/media/image113.png",
+      "size": 30948,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image113.png"
+    },
+    {
+      "name": "ppt/media/image114.png",
+      "size": 1991,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image114.png"
+    },
+    {
+      "name": "ppt/media/image115.svg",
+      "size": 979,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image115.svg"
+    },
+    {
+      "name": "ppt/media/image116.png",
+      "size": 1793,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image116.png"
+    },
+    {
+      "name": "ppt/media/image117.svg",
+      "size": 978,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image117.svg"
+    },
+    {
+      "name": "ppt/media/image118.png",
+      "size": 1905,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image118.png"
+    },
+    {
+      "name": "ppt/media/image119.svg",
+      "size": 974,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image119.svg"
+    },
+    {
+      "name": "ppt/media/image120.png",
+      "size": 4085,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image120.png"
+    },
+    {
+      "name": "ppt/media/image121.svg",
+      "size": 967,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image121.svg"
+    },
+    {
+      "name": "ppt/media/image122.png",
+      "size": 1527,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image122.png"
+    },
+    {
+      "name": "ppt/media/image123.svg",
+      "size": 992,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image123.svg"
+    },
+    {
+      "name": "ppt/media/image124.png",
+      "size": 1927,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image124.png"
+    },
+    {
+      "name": "ppt/media/image125.svg",
+      "size": 960,
+      "path": "C:\\Users\\tatya\\AndroidStudioProjects\\finmap-clone\\finvy_deck_work\\scratch\\orig_image125.svg"
+    }
+  ]
+}

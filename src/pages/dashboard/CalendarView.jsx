@@ -19,7 +19,7 @@ const MONTH_NAMES = {
   kz: ['Қаңтар','Ақпан','Наурыз','Сәуір','Мамыр','Маусым','Шілде','Тамыз','Қыркүйек','Қазан','Қараша','Желтоқсан'],
 }
 
-export default function CalendarView({ userId, demoData }) {
+export default function CalendarView({ userId }) {
   const { t, lang } = useLanguage()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
@@ -30,17 +30,19 @@ export default function CalendarView({ userId, demoData }) {
 
   useEffect(() => {
     fetchMonth()
-  }, [year, month, userId, demoData])
+  }, [year, month, userId])
 
   useEffect(() => {
     const refreshPlanned = () => fetchMonth()
     window.addEventListener('finvy:planned-payroll-updated', refreshPlanned)
+    window.addEventListener('finvy:business-goals-updated', refreshPlanned)
     window.addEventListener('storage', refreshPlanned)
     return () => {
       window.removeEventListener('finvy:planned-payroll-updated', refreshPlanned)
+      window.removeEventListener('finvy:business-goals-updated', refreshPlanned)
       window.removeEventListener('storage', refreshPlanned)
     }
-  }, [year, month, userId, demoData])
+  }, [year, month, userId])
 
   const fetchMonth = async () => {
     setLoading(true)
@@ -48,24 +50,17 @@ export default function CalendarView({ userId, demoData }) {
     const lastDay = getDaysInMonth(year, month)
     const to   = `${year}-${String(month + 1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`
 
-    let data
-    let plannedItems = []
-    if (demoData) {
-      data = demoData.filter(tx => tx.date >= from && tx.date <= to)
-      plannedItems = await getPlannedOperations({ userId, demo: true, from, to })
-    } else {
-      const [txRes, plannedRows] = await Promise.all([
-        supabase
-        .from('transactions')
-        .select('id, type, amount, date, description, category')
-        .eq('user_id', userId)
-        .gte('date', from)
-        .lte('date', to),
-        getPlannedOperations({ userId, from, to }),
-      ])
-      data = txRes.data
-      plannedItems = plannedRows || []
-    }
+    const [txRes, plannedRows] = await Promise.all([
+      supabase
+      .from('transactions')
+      .select('id, type, amount, date, description, category')
+      .eq('user_id', userId)
+      .gte('date', from)
+      .lte('date', to),
+      getPlannedOperations({ userId, from, to }),
+    ])
+    const data = txRes.data
+    const plannedItems = plannedRows || []
 
     if (data) {
       const map = {}

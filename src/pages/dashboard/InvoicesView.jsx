@@ -228,15 +228,7 @@ function InvoiceDetailModal({ inv, onClose, t }) {
   )
 }
 
-const DEMO_INVOICES = [
-  { id: 'demo-1', number: 'INV-0001', client_name: 'ТОО «Иртыш Строй»', client_email: 'info@irtysh-stroy.kz', amount: 1_450_000, currency: 'KZT', status: 'paid', issue_date: '2026-03-01', due_date: '2026-03-15', description: 'Строительные материалы — март 2026', created_at: '2026-03-01T10:00:00Z' },
-  { id: 'demo-2', number: 'INV-0002', client_name: 'КГУ «Школа №38»', client_email: 'school38@edu.kz', amount: 780_000, currency: 'KZT', status: 'pending', issue_date: '2026-03-18', due_date: '2026-04-18', description: 'Поставка учебного оборудования', created_at: '2026-03-18T09:00:00Z' },
-  { id: 'demo-3', number: 'INV-0003', client_name: 'ТОО «ВК-Регион»', client_email: 'buh@vk-region.kz', amount: 2_100_000, currency: 'KZT', status: 'paid', issue_date: '2026-02-10', due_date: '2026-02-28', description: 'Консалтинговые услуги — Q1', created_at: '2026-02-10T14:00:00Z' },
-  { id: 'demo-4', number: 'INV-0004', client_name: 'ИП Султанова А.К.', client_email: null, amount: 345_000, currency: 'KZT', status: 'overdue', issue_date: '2026-01-20', due_date: '2026-02-20', description: 'Аренда складского помещения', created_at: '2026-01-20T11:00:00Z' },
-]
-
-export default function InvoicesView({ userId, demoData }) {
-  const isDemo = !!demoData
+export default function InvoicesView({ userId }) {
   const { t } = useLanguage()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -245,30 +237,22 @@ export default function InvoicesView({ userId, demoData }) {
   const [viewInvoice, setViewInvoice] = useState(null)
 
   const fetchInvoices = useCallback(async () => {
-    if (isDemo) {
-      const filtered = statusFilter === 'all' ? DEMO_INVOICES : DEMO_INVOICES.filter(i => i.status === statusFilter)
-      setInvoices(filtered)
-      setLoading(false)
-      return
-    }
     setLoading(true)
     let q = supabase.from('fm_invoices').select('*').eq('user_id', userId).order('created_at', { ascending: false })
     if (statusFilter !== 'all') q = q.eq('status', statusFilter)
     const { data } = await q
     if (data) setInvoices(data)
     setLoading(false)
-  }, [userId, statusFilter, isDemo])
+  }, [userId, statusFilter])
 
   useEffect(() => { fetchInvoices() }, [fetchInvoices])
 
   const updateStatus = async (id, status) => {
-    if (isDemo) { setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv)); return }
     await supabase.from('fm_invoices').update({ status }).eq('id', id)
     setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv))
   }
 
   const deleteInvoice = async (id) => {
-    if (isDemo) { setInvoices(prev => prev.filter(inv => inv.id !== id)); return }
     await supabase.from('fm_invoices').delete().eq('id', id)
     setInvoices(prev => prev.filter(inv => inv.id !== id))
   }
@@ -319,12 +303,10 @@ export default function InvoicesView({ userId, demoData }) {
         </div>
 
         <div className="hidden xl:block flex-1" />
-        {!isDemo && (
-          <button onClick={() => setShowNew(true)}
-            className="flex-shrink-0 bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
-            <span className="text-base leading-none">+</span> {t.createInvoice}
-          </button>
-        )}
+        <button onClick={() => setShowNew(true)}
+          className="flex-shrink-0 bg-mint text-dark text-xs font-bold px-4 py-2 rounded-lg hover:bg-mint/90 transition-colors flex items-center gap-1.5">
+          <span className="text-base leading-none">+</span> {t.createInvoice}
+        </button>
       </div>
 
       {/* Table header */}

@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { LanguageProvider } from './context/LanguageContext'
 
@@ -15,36 +15,36 @@ import Footer from './components/Footer'
 import RegisterModal from './components/RegisterModal'
 import Dashboard from './pages/Dashboard'
 import { SubscriptionProvider } from './context/SubscriptionContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+const presentationFile = '/Finvy - AI Finance.pptx'
 
 function LandingPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [authModal, setAuthModal] = useState(null)
   const [selectedPlan, setSelectedPlan] = useState('business')
   const [selectedPeriod, setSelectedPeriod] = useState('half')
 
   if (user) return <Navigate to="/dashboard" replace />
 
-  const goDemo = () => navigate('/demo')
   const openRegister = (plan = 'business', period = 'half') => {
     setSelectedPlan(plan || 'business')
     setSelectedPeriod(period || 'half')
     setAuthModal('register')
   }
   const openLogin = () => setAuthModal('login')
+  const startProduct = () => openRegister('business', 'half')
 
   return (
     <div className="min-h-screen bg-[#24272b] font-sans overflow-x-hidden">
-      <Navbar onOpenModal={openRegister} onOpenLogin={openLogin} />
-      {/* Hero CTA "Попробовать без регистрации" → goes straight to demo */}
-      <Hero onOpenModal={goDemo} />
+      <Navbar onOpenModal={startProduct} onOpenLogin={openLogin} />
+      <Hero onOpenModal={startProduct} />
       <AppDemo />
-      <CashbackTeaser onOpenModal={openRegister} />
+      <CashbackTeaser onOpenModal={startProduct} />
       <Features />
-      <HowItWorks onOpenModal={openRegister} />
-      <ForBusiness onOpenModal={openRegister} />
-      <Pricing onOpenModal={openRegister} />
+      <HowItWorks onOpenModal={startProduct} />
+      <ForBusiness onOpenModal={startProduct} />
+      <Pricing onOpenModal={startProduct} />
       <ContactSection />
       <Footer />
       {authModal && (
@@ -56,6 +56,48 @@ function LandingPage() {
         />
       )}
     </div>
+  )
+}
+
+function DownloadPresentationPage() {
+  useEffect(() => {
+    const link = document.createElement('a')
+    link.href = presentationFile
+    link.download = 'Finvy - AI Finance.pptx'
+    document.body.appendChild(link)
+
+    const timer = window.setTimeout(() => {
+      link.click()
+      link.remove()
+    }, 250)
+
+    return () => {
+      window.clearTimeout(timer)
+      link.remove()
+    }
+  }, [])
+
+  return (
+    <main className="min-h-screen bg-[#f8faf8] text-[#24272b] flex items-center justify-center px-6 font-sans">
+      <section className="w-full max-w-xl text-center">
+        <p className="text-sm uppercase tracking-[0.22em] text-[#6f756f] mb-5">
+          Finvy pitch deck
+        </p>
+        <h1 className="text-4xl sm:text-5xl font-semibold leading-tight mb-6">
+          Скачивание презентации началось
+        </h1>
+        <p className="text-lg sm:text-xl text-[#5f675f] leading-relaxed mb-8">
+          Если файл не открылся автоматически, нажмите кнопку ниже.
+        </p>
+        <a
+          href={presentationFile}
+          download="Finvy - AI Finance.pptx"
+          className="inline-flex min-h-14 items-center justify-center rounded-lg bg-[#24272b] px-8 text-base font-semibold text-white transition hover:bg-[#111315] focus:outline-none focus:ring-4 focus:ring-[#99f0c8]"
+        >
+          Скачать презентацию
+        </a>
+      </section>
+    </main>
   )
 }
 
@@ -77,7 +119,8 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/demo/*" element={<Dashboard demo />} />
+          <Route path="/download/*" element={<DownloadPresentationPage />} />
+          <Route path="/demo/*" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard/*" element={
             <ProtectedRoute>
               <SubscriptionProvider>

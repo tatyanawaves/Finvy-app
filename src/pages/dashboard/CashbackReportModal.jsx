@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { getPlannedOperations } from '../../lib/plannedOperations'
 import {
   matchCategory,
   computeRecommendations,
@@ -8,23 +9,6 @@ import {
   CB_CATS,
 } from '../../data/bankCashbacks'
 import { useLiveCashbacks } from '../../hooks/useLiveCashbacks'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Demo spending data — realistic Kazakhstan monthly expenses
-// Used when user has no real transactions yet
-// ─────────────────────────────────────────────────────────────────────────────
-export const DEMO_SPENDING = {
-  'Продукты':           { expense: 85000  },  // grocery
-  'Топливо':            { expense: 45000  },  // fuel
-  'Рестораны и кафе':   { expense: 38000  },  // dining
-  'Такси':              { expense: 22000  },  // transport
-  'Коммунальные':       { expense: 28000  },  // utilities
-  'Одежда':             { expense: 40000  },  // fashion
-  'Аптека':             { expense: 15000  },  // health
-  'Развлечения':        { expense: 20000  },  // entertainment
-  'Kaspi (онлайн)':     { expense: 55000  },  // online
-  'Связь':              { expense: 8000   },  // utilities/telecom
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -49,6 +33,69 @@ function getPeriodDates(key) {
 
 const fmt = (n) => Math.round(n).toLocaleString('ru-RU')
 const fmtK = (n) => n >= 1000 ? `${(n/1000).toFixed(0)}к` : `${Math.round(n)}`
+const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-zа-я0-9]+/gi, '')
+
+function parseSurveyData(value) {
+  if (!value) return {}
+  if (typeof value === 'object') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return {}
+  }
+}
+
+const dateKey = (value) => {
+  if (!value) return ''
+  if (value instanceof Date) {
+    const year = value.getFullYear()
+    const month = String(value.getMonth() + 1).padStart(2, '0')
+    const day = String(value.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  return String(value).slice(0, 10)
+}
+
+function buildSpendingMapFromTransactions(transactions = [], dates) {
+  const from = dates ? dateKey(dates.from) : ''
+  const to = dates ? dateKey(dates.to) : ''
+  const map = {}
+
+  transactions
+    .filter(tx => tx.type === 'expense')
+    .filter(tx => isCashbackEligible(tx.category, tx.description))
+    .filter(tx => {
+      const txDate = dateKey(tx.date)
+      if (!from || !to) return true
+      return txDate >= from && txDate <= to
+    })
+    .forEach(tx => {
+      const cat = tx.category || 'Прочее'
+      if (!map[cat]) map[cat] = { expense: 0 }
+      map[cat].expense += Math.abs(Number(tx.amount) || 0)
+    })
+
+  return map
+}
+
+function isCashbackEligible(category = '', description = '') {
+  const text = `${category} ${description}`.toLowerCase()
+  const excluded = [
+    'зарплат',
+    'налог',
+    'ипн',
+    'опв',
+    'осмс',
+    'соц.',
+    'аренд',
+    'крипто-комисс',
+    'комиссия сети',
+    'usdt',
+    'перевод',
+    'обмен',
+  ]
+  return !excluded.some(word => text.includes(word))
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Step indicator
@@ -87,10 +134,9 @@ function StepIndicator({ step, onGoTo }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 0 — Period picker
 // ─────────────────────────────────────────────────────────────────────────────
-function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, onNext, loading, useDemoData, setUseDemoData, isAdult, setIsAdult, banks, source, updatedAt }) {
-  const canProceed = useDemoData || period !== 'custom' || (customFrom && customTo)
+function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, onNext, loading, isAdult, setIsAdult, banks, source, updatedAt }) {
+  const canProceed = period !== 'custom' || (customFrom && customTo)
   const totalCards = banks.reduce((s, b) => s + b.cards.length, 0)
-  const demoTotal = Object.values(DEMO_SPENDING).reduce((s, v) => s + v.expense, 0)
 
   return (
     <div>
@@ -116,33 +162,6 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
           )}
         </div>
       </div>
-
-      {/* Demo data toggle */}
-      <button
-        onClick={() => setUseDemoData(!useDemoData)}
-        className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 mb-4 border transition-all text-left ${
-          useDemoData
-            ? 'bg-[#4F8EF7]/10 border-[#4F8EF7]/30'
-            : 'bg-white/[0.03] border-white/[0.06] hover:border-white/10'
-        }`}
-      >
-        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-          useDemoData ? 'bg-[#4F8EF7]' : 'bg-white/10 border border-white/20'
-        }`}>
-          {useDemoData && <span className="text-white text-[10px] font-black">✓</span>}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${useDemoData ? 'text-[#4F8EF7]' : 'text-white/50'}`}>
-            Использовать демо-данные
-          </p>
-          <p className="text-white/25 text-[10px] mt-0.5">
-            Типичные траты казахстанца · {fmt(demoTotal)} ₸/мес · без реальных транзакций
-          </p>
-        </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint/10 text-mint border border-mint/20 font-bold flex-shrink-0">
-          Демо
-        </span>
-      </button>
 
       {/* Age toggle */}
       <div className="flex gap-2 mb-4">
@@ -220,7 +239,7 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 1 — Spending breakdown
 // ─────────────────────────────────────────────────────────────────────────────
-function StepAnalysis({ spendingMap, totalExpense, periodLabel, isDemo, onNext, onBack, banks }) {
+function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, banks }) {
   const topCategories = Object.entries(spendingMap)
     .filter(([, v]) => v.expense > 0)
     .sort((a, b) => b[1].expense - a[1].expense)
@@ -230,23 +249,11 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, isDemo, onNext, 
   return (
     <div>
       <div className="mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-white font-bold text-base">Ваши расходы</h3>
-          {isDemo && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4F8EF7]/15 text-[#4F8EF7] border border-[#4F8EF7]/25 font-bold">
-              Демо-данные
-            </span>
-          )}
-        </div>
+        <h3 className="text-white font-bold text-base">Ваши расходы</h3>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="text-2xl font-black text-white">{fmt(totalExpense)} ₸</span>
           <span className="text-white/30 text-sm">за {periodLabel?.toLowerCase()}</span>
         </div>
-        {isDemo && (
-          <p className="text-white/25 text-xs mt-1">
-            💡 Это типичные траты для демонстрации. Добавьте реальные транзакции — и отчёт будет персональным.
-          </p>
-        )}
       </div>
 
       {topCategories.length === 0 ? (
@@ -655,62 +662,72 @@ export default function CashbackReportModal({ userId, onClose }) {
   const [spendingMap, setSpendingMap] = useState({})
   const [totalExpense, setTotalExpense] = useState(0)
   const [recommendations, setRecommendations] = useState([])
-  const [useDemoData, setUseDemoData] = useState(false)
-  const [isDemo, setIsDemo] = useState(false)
   const [isAdult, setIsAdult] = useState(true)
+  const [surveyContext, setSurveyContext] = useState({})
   const { banks, source, updatedAt, version } = useLiveCashbacks()
+  const selectedBankNames = Array.isArray(surveyContext.banks) ? surveyContext.banks : []
+  const banksForAnalysis = useMemo(() => {
+    if (!selectedBankNames.length) return banks
+    const selected = selectedBankNames.map(normalize).filter(Boolean)
+    const preferred = banks.filter(bank => {
+      const bankName = normalize(`${bank.name || ''} ${bank.nameRu || ''}`)
+      return selected.some(name => bankName.includes(name) || name.includes(bankName))
+    })
+    if (!preferred.length) return banks
+    const preferredIds = new Set(preferred.map(bank => bank.id))
+    return [...preferred, ...banks.filter(bank => !preferredIds.has(bank.id))]
+  }, [banks, selectedBankNames])
+  const periodLabel = PERIODS.find(p => p.key === period)?.label || ''
 
-  const periodLabel = useDemoData
-    ? 'Демо-данные (типичный месяц)'
-    : PERIODS.find(p => p.key === period)?.label || ''
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!userId) return
+      const { data } = await supabase
+        .from('fm_settings')
+        .select('survey_data')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!cancelled) setSurveyContext(parseSurveyData(data?.survey_data))
+    })()
+    return () => { cancelled = true }
+  }, [userId])
 
   const fetchAndAnalyze = async () => {
     setLoading(true)
 
     let map = {}
 
-    if (useDemoData) {
-      // Use built-in demo spending
-      map = { ...DEMO_SPENDING }
-      setIsDemo(true)
-    } else {
-      const dates = period === 'custom'
-        ? (customFrom && customTo ? { from: customFrom, to: customTo } : null)
-        : getPeriodDates(period)
-      if (!dates) { setLoading(false); return }
+    const dates = period === 'custom'
+      ? (customFrom && customTo ? { from: customFrom, to: customTo } : null)
+      : getPeriodDates(period)
+    if (!dates) { setLoading(false); return }
 
-      const from = dates.from instanceof Date ? dates.from.toISOString().slice(0, 10) : dates.from
-      const to   = dates.to   instanceof Date ? dates.to.toISOString().slice(0, 10)   : dates.to
+    const from = dates.from instanceof Date ? dates.from.toISOString().slice(0, 10) : dates.from
+    const to   = dates.to   instanceof Date ? dates.to.toISOString().slice(0, 10)   : dates.to
 
-      const { data: txs } = await supabase
-        .from('transactions')
-        .select('type, amount, category')
-        .eq('user_id', userId)
-        .eq('type', 'expense')
-        .gte('date', from + 'T00:00:00')
-        .lte('date', to   + 'T23:59:59')
+    const { data: txs } = await supabase
+      .from('transactions')
+      .select('type, amount, category, description, date')
+      .eq('user_id', userId)
+      .eq('type', 'expense')
+      .gte('date', from + 'T00:00:00')
+      .lte('date', to   + 'T23:59:59')
 
-      if (txs) {
-        txs.forEach(tx => {
-          const cat = tx.category || 'Прочее'
-          if (!map[cat]) map[cat] = { expense: 0 }
-          map[cat].expense += Math.abs(tx.amount || 0)
-        })
-      }
+    if (txs?.length) {
+      map = buildSpendingMapFromTransactions(txs, { from, to })
+    }
 
-      // Auto-fallback to demo data if no real transactions found
-      if (Object.values(map).reduce((s, v) => s + v.expense, 0) === 0) {
-        map = { ...DEMO_SPENDING }
-        setIsDemo(true)
-      } else {
-        setIsDemo(false)
-      }
+    if (Object.keys(map).length === 0) {
+      const planned = await getPlannedOperations({ userId, from, to })
+      const onboardingPayments = planned.filter(op => op.type === 'expense' && op.plannedKind === 'obligation')
+      map = buildSpendingMapFromTransactions(onboardingPayments, { from, to })
     }
 
     const total = Object.values(map).reduce((s, v) => s + v.expense, 0)
     setSpendingMap(map)
     setTotalExpense(total)
-    setRecommendations(computeRecommendations(map, { isAdult, banks }))
+    setRecommendations(computeRecommendations(map, { isAdult, banks: banksForAnalysis }))
     setLoading(false)
     setStep(1)
   }
@@ -752,9 +769,8 @@ export default function CashbackReportModal({ userId, onClose }) {
               customFrom={customFrom} setCustomFrom={setCustomFrom}
               customTo={customTo} setCustomTo={setCustomTo}
               onNext={fetchAndAnalyze} loading={loading}
-              useDemoData={useDemoData} setUseDemoData={setUseDemoData}
               isAdult={isAdult} setIsAdult={setIsAdult}
-              banks={banks} source={source} updatedAt={updatedAt}
+              banks={banksForAnalysis} source={source} updatedAt={updatedAt}
             />
           )}
           {step === 1 && (
@@ -762,10 +778,9 @@ export default function CashbackReportModal({ userId, onClose }) {
               spendingMap={spendingMap}
               totalExpense={totalExpense}
               periodLabel={periodLabel}
-              isDemo={isDemo}
               onNext={() => setStep(2)}
               onBack={() => setStep(0)}
-              banks={banks}
+              banks={banksForAnalysis}
             />
           )}
           {step === 2 && (
@@ -776,7 +791,7 @@ export default function CashbackReportModal({ userId, onClose }) {
               spendingMap={spendingMap}
               onBack={() => setStep(0)}
               isAdult={isAdult}
-              banks={banks}
+              banks={banksForAnalysis}
             />
           )}
         </div>

@@ -59,7 +59,7 @@ function getPeriodDates(regime, deadline) {
   return { from: qStarts[m], to: qEnds[m] }
 }
 
-export default function TaxWidget({ userId, currency, demoData }) {
+export default function TaxWidget({ userId, currency }) {
   const { lang } = useLanguage()
   const isRu = lang !== 'en'
   const [regime, setRegime] = useState('simplified_ip')
@@ -76,34 +76,25 @@ export default function TaxWidget({ userId, currency, demoData }) {
     setLoading(true)
 
     let userRegime = 'simplified_ip'
-    if (demoData) {
-      // Demo mode — no Supabase calls
-    } else {
-      const { data: settings } = await supabase
-        .from('fm_settings')
-        .select('tax_regime')
-        .eq('user_id', userId)
-        .maybeSingle()
-      userRegime = settings?.tax_regime || 'simplified_ip'
-    }
+    const { data: settings } = await supabase
+      .from('fm_settings')
+      .select('tax_regime')
+      .eq('user_id', userId)
+      .maybeSingle()
+    userRegime = settings?.tax_regime || 'simplified_ip'
     setRegime(userRegime)
 
     // Calculate income/expense for current period
     const deadline = getNextDeadline(userRegime)
     const { from, to } = getPeriodDates(userRegime, deadline)
 
-    let txs
-    if (demoData) {
-      txs = demoData.filter(tx => tx.date >= from && tx.date <= to)
-    } else {
-      const res = await supabase
-        .from('transactions')
-        .select('amount, type')
-        .eq('user_id', userId)
-        .gte('date', from)
-        .lte('date', to)
-      txs = res.data
-    }
+    const res = await supabase
+      .from('transactions')
+      .select('amount, type')
+      .eq('user_id', userId)
+      .gte('date', from)
+      .lte('date', to)
+    const txs = res.data
 
     let inc = 0, exp = 0
     if (txs) {
@@ -120,7 +111,6 @@ export default function TaxWidget({ userId, currency, demoData }) {
   async function saveRegime(newRegime) {
     setRegime(newRegime)
     setEditing(false)
-    if (demoData) return
     await supabase.from('fm_settings').upsert({
       user_id: userId,
       tax_regime: newRegime,

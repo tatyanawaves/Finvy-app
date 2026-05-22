@@ -2,6 +2,7 @@
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import { getPlannedOperations } from '../../lib/plannedOperations'
+import { buildCashflowForecast } from '../../lib/cashflowService'
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -44,8 +45,94 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function AnalyticsView({ userId, refreshKey, demoData }) {
+const fmtMoney = (value) => `${Math.round(Math.abs(value || 0)).toLocaleString('ru-RU')} ₸`
+
+function CashflowForecastCard({ forecast, profileType = 'business' }) {
+  if (!forecast) return null
+  const isPersonal = profileType === 'personal'
+  const risk = forecast.riskLevel
+  const isCritical = risk === 'critical'
+  const isWarning = risk === 'warning'
+  const statusLabel = isCritical
+    ? (isPersonal ? 'Риск нехватки денег' : 'Риск кассового разрыва')
+    : isWarning
+      ? 'Низкий запас ликвидности'
+      : 'Запас ликвидности в норме'
+  const statusClass = isCritical
+    ? 'bg-red-500/10 text-red-300 border-red-500/20'
+    : isWarning
+      ? 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+      : 'bg-mint/10 text-mint border-mint/20'
+  const spark = forecast.daily.filter((_, i) => i % 6 === 0 || i === forecast.daily.length - 1)
+  const min = Math.min(...spark.map(d => d.balance), forecast.openingBalance)
+  const max = Math.max(...spark.map(d => d.balance), forecast.openingBalance)
+  const range = Math.max(1, max - min)
+  const points = spark.map((d, i) => {
+    const x = (i / Math.max(1, spark.length - 1)) * 100
+    const y = 74 - ((d.balance - min) / range) * 58
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+
+  return (
+    <div className="mb-4 overflow-hidden rounded-xl border border-[#4F8EF7]/15 bg-[#4F8EF7]/[0.055]">
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-white">{isPersonal ? 'Личный прогноз на 60 дней' : 'Прогноз Cash Flow на 60 дней'}</h3>
+            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusClass}`}>
+              {statusLabel}
+            </span>
+          </div>
+          <p className="max-w-2xl text-xs leading-relaxed text-white/45">
+            {isPersonal
+              ? 'Считает будущий баланс с учетом текущих счетов, регулярных платежей и финансовых целей.'
+              : 'Считает будущий баланс с учетом текущих счетов, ожидаемых инвойсов, ФОТ и резервов по бизнес-целям.'}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            ['Баланс сейчас', fmtMoney(forecast.openingBalance), 'text-[#4F8EF7]'],
+            ['План доходов', `+${fmtMoney(forecast.totalIncome)}`, 'text-mint'],
+            ['План расходов', `−${fmtMoney(forecast.totalExpense)}`, 'text-red-300'],
+            ['Мин. остаток', fmtMoney(forecast.minBalance), forecast.minBalance < 0 ? 'text-red-300' : 'text-amber-300'],
+          ].map(([label, value, color]) => (
+            <div key={label} className="rounded-lg border border-white/5 bg-black/10 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{label}</p>
+              <p className={`mt-1 whitespace-nowrap text-sm font-black tabular-nums ${color}`}>{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="border-t border-white/5 px-4 py-3">
+        <svg viewBox="0 0 100 82" className="h-20 w-full overflow-visible" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="cashflowForecastLine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#4F8EF7" />
+              <stop offset="100%" stopColor="#8DDCFF" />
+            </linearGradient>
+          </defs>
+          <line x1="0" x2="100" y1="74" y2="74" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <polyline points={points} fill="none" stroke="url(#cashflowForecastLine)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          {spark.map((d, i) => {
+            const x = (i / Math.max(1, spark.length - 1)) * 100
+            const y = 74 - ((d.balance - min) / range) * 58
+            return <circle key={d.date} cx={x} cy={y} r="1.8" fill={d.balance < 0 ? '#f87171' : '#8DDCFF'} vectorEffect="non-scaling-stroke" />
+          })}
+        </svg>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/35">
+          <span>{forecast.from}</span>
+          <span>Минимум: {forecast.minDate}</span>
+          <span>{forecast.to}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AnalyticsView({ userId, refreshKey, accounts = [], profileType = 'business' }) {
   const { t } = useLanguage()
+  const isPersonal = profileType === 'personal'
+  const netLabel = isPersonal ? 'Остаток' : t.netProfit
   const [period, setPeriod] = useState('6m')
   const [includePlanned, setIncludePlanned] = useState(true)
   const [plannedAvailable, setPlannedAvailable] = useState(false)
@@ -53,14 +140,17 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
   const [chartData, setChartData] = useState([])
   const [categoryData, setCategoryData] = useState([])
   const [totals, setTotals] = useState({ income: 0, expense: 0, profit: 0 })
+  const [forecast, setForecast] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const refreshPlanned = () => setPlannedRefreshKey(key => key + 1)
     window.addEventListener('finvy:planned-payroll-updated', refreshPlanned)
+    window.addEventListener('finvy:business-goals-updated', refreshPlanned)
     window.addEventListener('storage', refreshPlanned)
     return () => {
       window.removeEventListener('finvy:planned-payroll-updated', refreshPlanned)
+      window.removeEventListener('finvy:business-goals-updated', refreshPlanned)
       window.removeEventListener('storage', refreshPlanned)
     }
   }, [])
@@ -79,26 +169,37 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
     const from = fromDate.toISOString().slice(0, 10)
     const to = toDate.toISOString().slice(0, 10)
 
-    let data
-    if (demoData) {
-      data = demoData.filter(tx =>
-        tx.date >= from &&
-        (tx.type === 'income' || tx.type === 'expense')
-      )
-    } else {
-      const res = await supabase
-        .from('transactions')
-        .select('type, amount, date, category')
-        .eq('user_id', userId)
-        .gte('date', from)
-        .in('type', ['income', 'expense'])
-      data = res.data
-    }
+    const res = await supabase
+      .from('transactions')
+      .select('type, amount, date, category')
+      .eq('user_id', userId)
+      .gte('date', from)
+      .in('type', ['income', 'expense'])
+    const data = res.data
 
     if (!data) { setLoading(false); return }
 
-    const plannedTxs = await getPlannedOperations({ userId, demo: !!demoData, from, to })
+    const plannedTxs = await getPlannedOperations({ userId, from, to })
     setPlannedAvailable(plannedTxs.length > 0)
+
+    const forecastFromDate = new Date()
+    forecastFromDate.setHours(0, 0, 0, 0)
+    const forecastToDate = new Date(forecastFromDate)
+    forecastToDate.setDate(forecastToDate.getDate() + 60)
+    const forecastFrom = forecastFromDate.toISOString().slice(0, 10)
+    const forecastTo = forecastToDate.toISOString().slice(0, 10)
+    const forecastPlanned = await getPlannedOperations({
+      userId,
+      from: forecastFrom,
+      to: forecastTo,
+    })
+    setForecast(buildCashflowForecast({
+      accounts,
+      transactions: data,
+      plannedOperations: forecastPlanned,
+      horizonDays: 60,
+      startDate: forecastFromDate,
+    }))
 
     const analyticsData = includePlanned ? [...data, ...plannedTxs] : data
 
@@ -139,7 +240,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
     setCategoryData(catArr)
 
     setLoading(false)
-  }, [userId, period, refreshKey, includePlanned, plannedRefreshKey, demoData])
+  }, [userId, period, refreshKey, includePlanned, plannedRefreshKey, accounts])
 
   useEffect(() => {
     fetchAnalytics()
@@ -152,7 +253,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
       <div className="px-4 sm:px-6 py-4">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h2 className="text-white/80 text-sm font-semibold">{t.cashFlow}</h2>
+          <h2 className="text-white/80 text-sm font-semibold">{isPersonal ? 'Личный денежный поток' : t.cashFlow}</h2>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
             {plannedAvailable && (
               <button
@@ -187,7 +288,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
           {[
             { label: t.totalIncome,   value: totals.income,  color: 'text-mint',     bg: 'bg-mint/5 border-mint/10' },
             { label: t.totalExpenses, value: totals.expense, color: 'text-red-400',  bg: 'bg-red-500/5 border-red-500/10' },
-            { label: t.netProfit,     value: totals.profit,  color: totals.profit >= 0 ? 'text-mint' : 'text-red-400', bg: 'bg-white/5 border-white/5' },
+            { label: netLabel,     value: totals.profit,  color: totals.profit >= 0 ? 'text-mint' : 'text-red-400', bg: 'bg-white/5 border-white/5' },
           ].map(card => (
             <div key={card.label} className={`rounded-xl p-4 border ${card.bg}`}>
               <p className="text-white/40 text-xs mb-2">{card.label}</p>
@@ -205,6 +306,8 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
           </div>
         ) : (
           <>
+            <CashflowForecastCard forecast={forecast} profileType={profileType} />
+
             {/* Bar chart: Income vs Expenses */}
             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5 mb-4">
               <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{t.incomeVsExpenses}</p>
@@ -237,7 +340,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
 
             {/* Line chart: Profit trend */}
             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5 mb-4">
-              <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{t.profitTrend}</p>
+              <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{isPersonal ? 'Динамика остатка' : t.profitTrend}</p>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -257,7 +360,7 @@ export default function AnalyticsView({ userId, refreshKey, demoData }) {
                   <Line
                     type="monotone"
                     dataKey="profit"
-                    name={t.netProfit}
+                    name={netLabel}
                     stroke="#4F8EF7"
                     strokeWidth={2}
                     dot={{ fill: '#4F8EF7', r: 4, strokeWidth: 0 }}

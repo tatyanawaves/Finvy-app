@@ -18,9 +18,25 @@ const CATEGORIES_I18N = {
   },
 }
 
-export default function AddTransactionModal({ type: initialType, userId, accounts, onClose, onSuccess }) {
+const PERSONAL_CATEGORIES_I18N = {
+  en: {
+    income: ['Salary', 'Freelance', 'Cashback', 'Transfers', 'Investment income', 'Other Income'],
+    expense: ['Groceries', 'Rent/Mortgage', 'Utilities', 'Transport', 'Health', 'Kids', 'Entertainment', 'Subscriptions', 'Education', 'Other'],
+  },
+  ru: {
+    income: ['Зарплата', 'Фриланс', 'Кэшбек', 'Переводы', 'Инвестиционный доход', 'Прочий доход'],
+    expense: ['Продукты', 'Аренда/ипотека', 'Коммунальные', 'Транспорт', 'Здоровье', 'Дети', 'Развлечения', 'Подписки', 'Образование', 'Другое'],
+  },
+  kz: {
+    income: ['Жалақы', 'Фриланс', 'Кэшбэк', 'Аударымдар', 'Инвестициялық кіріс', 'Басқа кіріс'],
+    expense: ['Азық-түлік', 'Жалдау/ипотека', 'Коммуналдық', 'Көлік', 'Денсаулық', 'Балалар', 'Ойын-сауық', 'Жазылымдар', 'Білім', 'Басқа'],
+  },
+}
+
+export default function AddTransactionModal({ type: initialType, userId, accounts, profileType = 'business', onClose, onSuccess }) {
   const { t, lang } = useLanguage()
-  const CATEGORIES = { ...(CATEGORIES_I18N[lang] || CATEGORIES_I18N.en), transfer: [] }
+  const categorySet = profileType === 'personal' ? PERSONAL_CATEGORIES_I18N : CATEGORIES_I18N
+  const CATEGORIES = { ...(categorySet[lang] || categorySet.en), transfer: [] }
   const [type, setType] = useState(initialType || 'income')
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')

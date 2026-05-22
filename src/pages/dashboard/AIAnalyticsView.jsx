@@ -297,17 +297,18 @@ function getSmartPrompts(lang, messages, insights) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
+export default function AIAnalyticsView({ userId, profileType = 'business' }) {
   const { t, lang } = useLanguage()
+  const isPersonal = profileType === 'personal'
   const auth = useAuth()
-  const user = demoData ? { id: 'demo' } : auth.user
+  const user = auth.user
   const insightL = INSIGHT_I18N[lang] || INSIGHT_I18N.en
-  const [txs, setTxs] = useState(demoData || [])
-  const [accounts, setAccounts] = useState(demoAccounts || [])
+  const [txs, setTxs] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [plannedOps, setPlannedOps] = useState([])
   const [budgetSnapshot, setBudgetSnapshot] = useState(null) // {month, rows, totals, monthIncome, toBudget}
-  const [loading, setLoading] = useState(!demoData)
-  const [insights, setInsights] = useState(demoData ? computeInsights(demoData, lang) : [])
+  const [loading, setLoading] = useState(true)
+  const [insights, setInsights] = useState([])
   const [messages, setMessages] = useState([
     { role: 'assistant', content: t.aiWelcome || 'Hi! I\'m your AI financial assistant. Ask me anything about your finances, or try one of the prompts below.' }
   ])
@@ -319,7 +320,6 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
 
   // Load transaction data
   useEffect(() => {
-    if (demoData) return
     const load = async () => {
       setLoading(true)
       const [{ data: txData }, { data: accData }] = await Promise.all([
@@ -331,7 +331,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
       setLoading(false)
     }
     load()
-  }, [userId, lang, demoData])
+  }, [userId, lang])
 
   useEffect(() => {
     const loadPlanned = async () => {
@@ -340,7 +340,6 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
       to.setDate(to.getDate() + 60)
       const ops = await getPlannedOperations({
         userId,
-        demo: !!demoData,
         from: from.toISOString().slice(0, 10),
         to: to.toISOString().slice(0, 10),
       })
@@ -348,19 +347,17 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
     }
     loadPlanned()
     window.addEventListener('finvy:planned-payroll-updated', loadPlanned)
+    window.addEventListener('finvy:business-goals-updated', loadPlanned)
     window.addEventListener('storage', loadPlanned)
     return () => {
       window.removeEventListener('finvy:planned-payroll-updated', loadPlanned)
+      window.removeEventListener('finvy:business-goals-updated', loadPlanned)
       window.removeEventListener('storage', loadPlanned)
     }
-  }, [userId, demoData])
+  }, [userId])
 
   // Load current month's budget snapshot for AI context
   useEffect(() => {
-    if (demoData) {
-      setBudgetSnapshot(null)
-      return
-    }
     const loadBudget = async () => {
       const now = new Date()
       const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -381,7 +378,7 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
       setBudgetSnapshot({ month: m, rows: data || [], spent: spentMap })
     }
     loadBudget()
-  }, [userId, demoData, txs])
+  }, [userId, txs])
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -431,10 +428,11 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
 
     if (lang === 'ru') {
       return `Отвечай на русском языке. Валюта всех сумм: казахстанский тенге (₸).
+Тип профиля: ${isPersonal ? 'физическое лицо' : 'бизнес'}.
 Общий баланс: ${amount(totalBalance)}
 Доход за текущий месяц: ${amount(income)}
 Расходы за текущий месяц: ${amount(expenses)}
-Чистый результат за текущий месяц: ${amount(income - expenses)}
+${isPersonal ? 'Остаток' : 'Чистый результат'} за текущий месяц: ${amount(income - expenses)}
 Норма сбережений: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0}%
 Главные категории расходов: ${topCategoryText}
 Количество транзакций за месяц: ${thisMonth.length}
@@ -456,16 +454,17 @@ export default function AIAnalyticsView({ userId, demoData, demoAccounts }) {
     }
 
     return `Answer in English. Currency for all amounts: Kazakhstani tenge (₸).
+Profile type: ${isPersonal ? 'personal finance' : 'business'}.
 Total balance: ${amount(totalBalance)}
 This month income: ${amount(income)}
 This month expenses: ${amount(expenses)}
-Net profit this month: ${amount(income - expenses)}
+${isPersonal ? 'Net balance' : 'Net profit'} this month: ${amount(income - expenses)}
 Savings rate: ${income > 0 ? ((income - expenses) / income * 100).toFixed(1) : 0}%
 Top expense categories: ${topCategoryText}
 Total transactions this month: ${thisMonth.length}
 Planned operations for 60 days: income ${amount(planned.income)}, expenses ${amount(planned.expense)}, net plan ${amount(planned.net)}. List: ${plannedText}
 Accounts: ${accountText}${budgetText ? `\nEnvelope budget:\n${budgetText}` : ''}`
-  }, [txs, accounts, plannedOps, lang, formatBudgetText])
+  }, [txs, accounts, plannedOps, lang, formatBudgetText, isPersonal])
 
   const sendMessage = async (text) => {
     const msg = text || input.trim()

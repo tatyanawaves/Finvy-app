@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/200.html')\"",
-    "deploy": "npm run build && npx surge dist finvy-app.surge.sh",
+    "deploy": "npx vercel@latest deploy --prod --yes",
     "lint": "eslint .",
     "preview": "vite preview"
   },

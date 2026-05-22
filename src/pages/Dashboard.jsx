@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage, LANGS } from '../context/LanguageContext'
-import { DEMO_ACCOUNTS, DEMO_TRANSACTIONS } from '../data/demoData'
 import TransactionsView from './dashboard/TransactionsView'
 import AnalyticsView from './dashboard/AnalyticsView'
 import CalendarView from './dashboard/CalendarView'
@@ -78,15 +77,15 @@ function LangSwitcher() {
   )
 }
 
-function DashboardInner({ demo }) {
+function DashboardInner() {
   const auth = useAuth()
-  const user = demo ? { id: 'demo', email: 'demo@finvy.kz' } : auth.user
-  const signOut = demo ? () => window.location.href = '/' : auth.signOut
+  const user = auth.user
+  const signOut = auth.signOut
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
-  const [accounts, setAccounts] = useState(demo ? DEMO_ACCOUNTS : [])
-  const [totalBalance, setTotalBalance] = useState(demo ? DEMO_ACCOUNTS.reduce((s, a) => s + a.balance, 0) : 0)
+  const [accounts, setAccounts] = useState([])
+  const [totalBalance, setTotalBalance] = useState(0)
   const [showAddModal, setShowAddModal] = useState(null)
   const [showAddAccount, setShowAddAccount] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -94,10 +93,10 @@ function DashboardInner({ demo }) {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingChecked, setOnboardingChecked] = useState(false)
   const [profileType, setProfileType] = useState('business')
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const profileMenuRef = useRef(null)
   const tabsScrollRef = useRef(null)
+  const isPersonalProfile = profileType === 'personal'
+  const businessOnlyTabKeys = ['taxes', 'payroll', 'users', 'invoices']
 
   const currentTab = location.pathname.includes('ai') ? 'ai'
     : location.pathname.includes('analytics') ? 'analytics'
@@ -113,21 +112,8 @@ function DashboardInner({ demo }) {
     : location.pathname.includes('settings') ? 'settings'
     : 'transactions'
 
-  // Close profile menu on outside click
-  useEffect(() => {
-    const handler = (e) => { if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) setShowProfileMenu(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
   // Load user settings (default currency etc.) + check onboarding
   const loadSettings = useCallback(async () => {
-    if (demo) {
-      setDefaultCurrency('KZT')
-      setProfileType('business')
-      setOnboardingChecked(true)
-      return
-    }
     const { data } = await supabase
       .from('fm_settings')
       .select('default_currency, onboarding_done, survey_data')
@@ -142,13 +128,12 @@ function DashboardInner({ demo }) {
     }
     if (!data || !data.onboarding_done) setShowOnboarding(true)
     setOnboardingChecked(true)
-  }, [user.id, demo])
+  }, [user.id])
 
-  useEffect(() => { if (!demo) fetchAccounts() }, [refreshKey])
+  useEffect(() => { fetchAccounts() }, [refreshKey])
   useEffect(() => { loadSettings() }, [loadSettings])
 
   const fetchAccounts = async () => {
-    if (demo) return
     const { data } = await supabase
       .from('accounts')
       .select('*')
@@ -170,22 +155,29 @@ function DashboardInner({ demo }) {
     fetchAccounts()
   }
 
-  const base = demo ? '/demo' : '/dashboard'
-  const tabs = [
+  const base = '/dashboard'
+  const allTabs = [
     { key: 'transactions', label: t.transactions,  path: base },
     { key: 'budget',      label: t.budget || 'Бюджет', path: `${base}/budget` },
-    { key: 'goals',       label: t.goals || 'Цели',   path: `${base}/goals` },
+    { key: 'goals',       label: isPersonalProfile ? 'Фин. цели' : (t.goals || 'Цели'), path: `${base}/goals` },
     { key: 'analytics',   label: t.analytics,     path: `${base}/analytics` },
     { key: 'ai',          label: `✦ ${t.aiAnalytics || 'AI'}`, path: `${base}/ai` },
     { key: 'calendar',    label: t.calendar,       path: `${base}/calendar` },
-    { key: 'invoices',    label: t.invoices,       path: `${base}/invoices` },
+    { key: 'invoices',    label: t.invoices,       path: `${base}/invoices`, businessOnly: true },
     { key: 'reports',     label: t.reports,        path: `${base}/reports` },
-    { key: 'taxes',       label: t.taxes || 'Налоги', path: `${base}/taxes` },
-    { key: 'payroll',     label: 'З/п',               path: `${base}/payroll` },
+    { key: 'taxes',       label: t.taxes || 'Налоги', path: `${base}/taxes`, businessOnly: true },
+    { key: 'payroll',     label: 'З/п',               path: `${base}/payroll`, businessOnly: true },
     { key: 'categories',  label: t.categories,     path: `${base}/categories` },
-    { key: 'users',       label: t.users,          path: `${base}/users` },
+    { key: 'users',       label: t.users,          path: `${base}/users`, businessOnly: true },
     { key: 'settings',    label: t.settings,       path: `${base}/settings` },
   ]
+  const tabs = allTabs.filter(tab => !isPersonalProfile || !tab.businessOnly)
+
+  useEffect(() => {
+    if (isPersonalProfile && businessOnlyTabKeys.includes(currentTab)) {
+      navigate(base, { replace: true })
+    }
+  }, [isPersonalProfile, currentTab, navigate])
 
   const currencySymbol = (c) => ({ USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }[c] || c)
   const scrollTabs = (direction) => {
@@ -212,51 +204,12 @@ function DashboardInner({ demo }) {
         {/* Logo */}
         <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
           <BrandLogo textClassName="text-white text-base" />
-          <div ref={profileMenuRef} className="relative">
-            <button
-              onClick={() => setShowProfileMenu(o => !o)}
-              className="text-white/40 hover:text-white/70 text-xs border border-white/10 hover:border-white/20 rounded-lg px-2 py-1 transition-colors flex items-center gap-1"
-            >
-              <span>{profileType === 'personal' ? '👤' : '🏢'}</span>
-              <span>{profileType === 'personal' ? (t.personal || 'Физ. лицо') : t.business}</span>
-              <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M4 6L1 2h6L4 6z"/></svg>
-            </button>
-            {showProfileMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[130px]">
-                <button
-                  onClick={async () => {
-                    setProfileType('business')
-                    setShowProfileMenu(false)
-                    if (!demo) {
-                      const { data: s } = await supabase.from('fm_settings').select('survey_data').eq('user_id', user.id).maybeSingle()
-                      let sd = {}; try { sd = s?.survey_data ? (typeof s.survey_data === 'string' ? JSON.parse(s.survey_data) : s.survey_data) : {} } catch {}
-                      sd.profileType = 'business'
-                      await supabase.from('fm_settings').upsert({ user_id: user.id, survey_data: JSON.stringify(sd) }, { onConflict: 'user_id' })
-                    }
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs transition-colors ${profileType === 'business' ? 'text-white bg-white/5' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                >
-                  <span>🏢</span><span className="font-medium">{t.business}</span>
-                  {profileType === 'business' && <span className="ml-auto text-mint">✓</span>}
-                </button>
-                <button
-                  onClick={async () => {
-                    setProfileType('personal')
-                    setShowProfileMenu(false)
-                    if (!demo) {
-                      const { data: s } = await supabase.from('fm_settings').select('survey_data').eq('user_id', user.id).maybeSingle()
-                      let sd = {}; try { sd = s?.survey_data ? (typeof s.survey_data === 'string' ? JSON.parse(s.survey_data) : s.survey_data) : {} } catch {}
-                      sd.profileType = 'personal'
-                      await supabase.from('fm_settings').upsert({ user_id: user.id, survey_data: JSON.stringify(sd) }, { onConflict: 'user_id' })
-                    }
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs transition-colors ${profileType === 'personal' ? 'text-white bg-white/5' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                >
-                  <span>👤</span><span className="font-medium">{t.personal || 'Физ. лицо'}</span>
-                  {profileType === 'personal' && <span className="ml-auto text-mint">✓</span>}
-                </button>
-              </div>
-            )}
+          <div
+            className="text-white/55 text-xs border border-white/10 rounded-lg px-2 py-1 flex items-center gap-1"
+            title="Тип профиля выбирается один раз в первом опроснике"
+          >
+            <span>{isPersonalProfile ? '👤' : '🏢'}</span>
+            <span>{isPersonalProfile ? (t.personal || 'Физ. лицо') : t.business}</span>
           </div>
         </div>
 
@@ -302,21 +255,13 @@ function DashboardInner({ demo }) {
 
         {/* User + sign out / back to landing */}
         <div className="px-5 py-4 border-t border-white/5">
-          {demo ? (
-            <button onClick={() => navigate('/')} className="text-mint hover:text-mint/80 text-xs font-medium transition-colors flex items-center gap-1.5">
-              ← {t.backToSite || 'На главную'}
-            </button>
-          ) : (
-            <>
-              <p className="text-white/40 text-xs truncate mb-2">{user?.email}</p>
-              <button onClick={signOut} className="text-white/40 hover:text-white/70 text-xs transition-colors flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M8 1h2a1 1 0 011 1v8a1 1 0 01-1 1H8M5 9l3-3-3-3M8 6H1"/>
-                </svg>
-                {t.signOut}
-              </button>
-            </>
-          )}
+          <p className="text-white/40 text-xs truncate mb-2">{user?.email}</p>
+          <button onClick={signOut} className="text-white/40 hover:text-white/70 text-xs transition-colors flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M8 1h2a1 1 0 011 1v8a1 1 0 01-1 1H8M5 9l3-3-3-3M8 6H1"/>
+            </svg>
+            {t.signOut}
+          </button>
         </div>
       </aside>
 
@@ -395,19 +340,19 @@ function DashboardInner({ demo }) {
         {/* Page content */}
         <main className="flex-1 overflow-hidden">
           <Routes>
-            <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
-            <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
-            <Route path="budget" element={<BudgetView userId={user.id} refreshKey={refreshKey} demo={demo} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
-            <Route path="goals" element={<GoalsView userId={user.id} demo={demo} />} />
-            <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
-            <Route path="calendar" element={<CalendarView userId={user.id} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
+            <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} />} />
+            <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} />} />
+            <Route path="budget" element={<BudgetView userId={user.id} refreshKey={refreshKey} profileType={profileType} />} />
+            <Route path="goals" element={<GoalsView userId={user.id} profileType={profileType} />} />
+            <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} accounts={accounts} profileType={profileType} />} />
+            <Route path="calendar" element={<CalendarView userId={user.id} />} />
             <Route path="users" element={<UsersView />} />
-            <Route path="invoices" element={<InvoicesView userId={user.id} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
-            <Route path="categories" element={<CategoriesView userId={user.id} />} />
-            <Route path="reports" element={<ReportsView userId={user.id} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />} />
+            <Route path="invoices" element={<InvoicesView userId={user.id} currency={defaultCurrency} />} />
+            <Route path="categories" element={<CategoriesView userId={user.id} profileType={profileType} />} />
+            <Route path="reports" element={<ReportsView userId={user.id} currency={defaultCurrency} profileType={profileType} />} />
             <Route path="taxes" element={
               <ToolPage title={t.taxes || 'Налоги'} subtitle={t.taxesSubtitle || 'Расчёт налогов и ближайшие сроки сдачи'}>
-                <TaxWidget userId={user.id} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} />
+                <TaxWidget userId={user.id} currency={defaultCurrency} />
               </ToolPage>
             } />
             <Route path="payroll" element={
@@ -415,8 +360,8 @@ function DashboardInner({ demo }) {
                 <PayrollCalculator userId={user.id} currency={defaultCurrency} onPlannedChange={() => setRefreshKey(k => k + 1)} />
               </ToolPage>
             } />
-            <Route path="settings" element={<SettingsView userId={user.id} onSave={loadSettings} demo={demo} />} />
-            <Route path="ai" element={<AIAnalyticsView userId={user.id} currency={defaultCurrency} demoData={demo ? DEMO_TRANSACTIONS : null} demoAccounts={demo ? DEMO_ACCOUNTS : null} />} />
+            <Route path="settings" element={<SettingsView userId={user.id} profileType={profileType} onSave={loadSettings} />} />
+            <Route path="ai" element={<AIAnalyticsView userId={user.id} currency={defaultCurrency} profileType={profileType} />} />
           </Routes>
         </main>
       </div>
@@ -427,6 +372,7 @@ function DashboardInner({ demo }) {
           type={showAddModal}
           userId={user.id}
           accounts={accounts}
+          profileType={profileType}
           onClose={() => setShowAddModal(null)}
           onSuccess={onTransactionAdded}
         />
@@ -445,10 +391,11 @@ function DashboardInner({ demo }) {
       {onboardingChecked && showOnboarding && (
         <OnboardingSurvey
           userId={user.id}
-          onComplete={() => {
+          onComplete={(surveyData) => {
             setShowOnboarding(false)
             setRefreshKey(k => k + 1)
             loadSettings()
+            if (surveyData?.startMethod === 'import') navigate('/dashboard/reports')
           }}
         />
       )}
@@ -456,6 +403,6 @@ function DashboardInner({ demo }) {
   )
 }
 
-export default function Dashboard({ demo }) {
-  return <DashboardInner demo={demo} />
+export default function Dashboard() {
+  return <DashboardInner />
 }

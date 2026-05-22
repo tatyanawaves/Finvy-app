@@ -11,7 +11,7 @@ const TIMEZONES = [
 ]
 const DATE_FORMATS = ['MM/DD/YYYY','DD/MM/YYYY','YYYY-MM-DD']
 
-export default function SettingsView({ userId, onSave, demo }) {
+export default function SettingsView({ userId, profileType = 'business', onSave, demo }) {
   const { t, lang, changeLang, LANGS } = useLanguage()
   const { user } = useAuth()
   const { subscription, isActive, isTrialing, openPortal } = useSubscription()
@@ -124,6 +124,13 @@ export default function SettingsView({ userId, onSave, demo }) {
                   disabled
                   className={`${inputClass} opacity-40 cursor-not-allowed`}
                 />
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Тип профиля</label>
+                <div className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/65">
+                  {profileType === 'personal' ? 'Физ. лицо' : 'Бизнес'}
+                  <span className="block text-[11px] text-white/30 mt-0.5">Выбирается один раз в первом опроснике</span>
+                </div>
               </div>
             </div>
           </div>
