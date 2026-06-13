@@ -106,7 +106,6 @@ export default function Navbar({ onOpenModal, onOpenLogin }) {
                 </>
               )}
             </button>
-            <span className="text-white/50 text-sm hidden lg:block">{lt.menu}</span>
             <BrandLogo />
           </div>
 

@@ -156,9 +156,6 @@ function VisualComposition() {
         </div>
 
         {/* ── Element 4: Floating active Bank sync capsules ── */}
-        <BankBadge name="Kaspi" logoColor="text-red-500" className="right-[50%] top-[-2%] translate-x-[50%]" />
-        <BankBadge name="Halyk" logoColor="text-emerald-500" className="left-[4%] top-[45%]" />
-        <BankBadge name="Bereke" logoColor="text-orange-500" className="right-[35%] bottom-[2%]" />
       </div>
     </div>
   )
@@ -191,12 +188,6 @@ export default function Hero({ onOpenModal }) {
         
         {/* Left Side: Content & Typography */}
         <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
-          
-          {/* Tagline Pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#38bdf8]/20 bg-[#38bdf8]/6 px-4 py-1.5 text-xs font-bold text-[#0284c7] backdrop-blur-md transition-all duration-300 hover:bg-[#38bdf8]/12">
-            <span className="flex h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#38bdf8] to-[#34d399]"></span>
-            <span>{lt.heroTag ?? '✦ Умные финансы для Казахстана'}</span>
-          </div>
 
           {/* Big bold headline inspired by Revolut */}
           <h1 className="mt-6 text-[2.5rem] font-black leading-[1.05] tracking-tight text-slate-800 sm:text-[3.4rem] lg:text-[4.2rem] xl:text-[4.5rem]">
@@ -220,36 +211,11 @@ export default function Hero({ onOpenModal }) {
           <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row lg:items-start">
             <button
               onClick={onOpenModal}
-              className="group relative flex w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#38bdf8] to-[#34d399] px-8 py-4.5 text-base font-extrabold text-white shadow-[0_20px_40px_-15px_rgba(56,189,248,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_50px_-12px_rgba(56,189,248,0.6)] active:translate-y-0 sm:w-auto"
+              className="group relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#38bdf8] to-[#34d399] px-8 py-4.5 text-base font-extrabold text-white shadow-[0_20px_40px_-15px_rgba(56,189,248,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_50px_-12px_rgba(56,189,248,0.6)] active:translate-y-0 sm:w-auto"
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <span>{lt.tryFree}</span>
             </button>
-            
-            <a
-              href="/download"
-              className="flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/70 px-7 py-4 text-base font-bold text-slate-700 backdrop-blur transition-all duration-300 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-98 sm:w-auto"
-            >
-              <span>Презентация</span>
-              <IconArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
-            </a>
-          </div>
-
-          {/* Trust badges bar */}
-          <div className="mt-12 border-t border-slate-100 pt-8">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 text-center lg:text-left mb-4">
-              Безопасность и интеграция
-            </p>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {trustItems.map(({ Icon, label }) => (
-                <div key={label} className="group flex items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white/60 px-4 py-3.5 shadow-[0_12px_30px_-20px_rgba(22,75,145,0.08)] backdrop-blur transition-all duration-300 hover:border-slate-200 hover:bg-white lg:justify-start">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#38bdf8]/10 text-[#0284c7] transition-colors duration-300 group-hover:bg-[#34d399]/15 group-hover:text-[#059669]">
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                  <span className="text-xs font-extrabold text-slate-600 transition-colors duration-300 group-hover:text-slate-800">{label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -260,7 +226,7 @@ export default function Hero({ onOpenModal }) {
           {/* Subtitle features bottom bar */}
           <div className="mx-auto mt-4 grid max-w-[480px] xl:max-w-[520px] grid-cols-3 gap-3">
             {[
-              ['20+', lt.cashbackSubtitle ?? 'карт с кэшбеком', 'border-sky-100 bg-sky-50/20 text-[#0284c7]'],
+              ['💡', lt.forecastSubtitle ?? 'Финансовый прогноз', 'border-sky-100 bg-sky-50/20 text-[#0284c7]'],
               ['24/7', lt.analyticsSubtitle ?? 'аналитика', 'border-emerald-100 bg-emerald-50/20 text-[#059669]'],
               ['PDF', lt.reportsSubtitle ?? 'отчёты', 'border-slate-200 bg-slate-50/20 text-slate-600'],
             ].map(([value, label, themeClass]) => (

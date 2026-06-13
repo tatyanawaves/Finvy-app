@@ -61,7 +61,7 @@ export default function ForBusiness({ onOpenModal }) {
                 {[
                   ['Cash Flow', 'готов сразу'],
                   ['P&L', 'по категориям'],
-                  ['PDF', 'для команды'],
+                  ['PDF', 'для отчетности'],
                 ].map(([title, desc]) => (
                   <div key={title} className="rounded-2xl border border-[#d7e8ff] bg-white/76 px-4 py-3 text-left shadow-[0_16px_40px_-32px_rgba(22,75,145,0.45)] backdrop-blur">
                     <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-[#eaf5ff] text-[#1d66f2]">

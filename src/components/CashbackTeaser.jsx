@@ -83,68 +83,68 @@ export default function CashbackTeaser({ onOpenModal }) {
   const totalAnnual  = totalMonthly * 12  // 183 000
 
   return (
-    <section className="relative overflow-hidden py-14 sm:py-20 px-4">
+    <section className="relative overflow-hidden py-10 sm:py-14 px-4">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[#4F8EF7]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-mint/4 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#4F8EF7]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-[300px] h-[200px] bg-mint/4 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto">
+      <div className="relative max-w-5xl mx-auto">
 
         {/* Badge */}
-        <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center gap-2 bg-mint/10 border border-mint/20 text-mint text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
+        <div className="flex justify-center mb-4">
+          <span className="inline-flex items-center gap-2 bg-mint/10 border border-mint/20 text-mint text-xs font-bold px-3 py-1 rounded-full tracking-wide">
             {lt.cashbackSectionTag}
           </span>
         </div>
 
-        {/* Headline */}
-        <div className="text-center mb-5 max-w-3xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-4">
+        {/* Headline - smaller */}
+        <div className="text-center mb-4 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2">
             {lt.cashbackSectionTitle}
           </h2>
-          <p className="text-white/45 text-base leading-relaxed">
+          <p className="text-white/45 text-sm leading-relaxed">
             {lt.cashbackSectionSub}{' '}
             <span className="text-mint font-bold">{lt.cashbackSectionSubHighlight}</span>
             {' '}{lt.cashbackSectionSubEnd}
           </p>
         </div>
 
-        {/* 4 stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+        {/* 4 stats - compact */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
           {lt.cashbackStats.map((s, i) => (
             <div key={i}
-              className="relative group bg-white/[0.03] border border-white/[0.07] hover:border-mint/25 rounded-2xl p-5 text-center transition-all hover:bg-white/[0.05]">
-              <div className="text-3xl font-black text-mint mb-1 tabular-nums">{s.value}</div>
-              <div className="text-white/80 text-sm font-semibold mb-1">{s.label}</div>
-              <div className="text-white/30 text-xs leading-tight">{s.sub}</div>
+              className="relative group bg-white/[0.03] border border-white/[0.07] hover:border-mint/25 rounded-lg p-3 text-center transition-all hover:bg-white/[0.05]">
+              <div className="text-xl sm:text-2xl font-black text-mint mb-0.5 tabular-nums">{s.value}</div>
+              <div className="text-white/80 text-xs font-semibold mb-0.5">{s.label}</div>
+              <div className="text-white/30 text-[10px] leading-tight">{s.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Main content: example table + visual */}
-        <div className="grid lg:grid-cols-2 gap-6 items-start">
+        {/* Main content: smaller layout */}
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
 
-          {/* Left: Example calculation table */}
-          <div className="bg-[#24272b] border border-white/[0.08] rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-              <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+          {/* Left: Example calculation table - compact */}
+          <div className="bg-[#24272b] border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between">
+              <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">
                 {lt.cashbackExampleTitle}
               </p>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-mint/10 text-mint border border-mint/20">
-                Finvy AI
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-mint/10 text-mint border border-mint/20">
+                AI
               </span>
             </div>
 
             <div className="divide-y divide-white/[0.05] overflow-x-auto scrollbar-none">
-              <div className="min-w-[620px] sm:min-w-0">
+              <div className="min-w-[600px] sm:min-w-0">
               {/* Header row */}
-              <div className={`${tableGridClass} px-5 py-2.5`}>
+              <div className={`${tableGridClass} px-3 py-2`}>
                 {lt.cashbackTableHeaders.map((h, i) => (
                   <span
                     key={h}
-                    className={`text-white/20 text-[10px] font-bold uppercase tracking-wider ${
+                    className={`text-white/20 text-[9px] font-bold uppercase tracking-wider ${
                       i === 1 || i === 3 ? 'text-right' : ''
                     }`}
                   >
@@ -155,41 +155,41 @@ export default function CashbackTeaser({ onOpenModal }) {
 
               {lt.cashbackExampleRows.map((row, i) => (
                 <div key={i}
-                  className={`${tableGridClass} px-5 py-3 hover:bg-white/[0.02] transition-colors`}>
-                  <span className="flex items-center gap-3 text-white/75 text-sm">
-                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#83b5ff]/28 bg-[linear-gradient(145deg,rgba(79,142,247,0.22),rgba(21,63,132,0.26))] text-[#9bc2ff] shadow-[0_12px_28px_-18px_rgba(79,142,247,0.95),inset_0_1px_0_rgba(255,255,255,0.18)]">
-                      <span className="absolute inset-1 rounded-lg bg-white/[0.04]" />
-                      <span className="relative">
+                  className={`${tableGridClass} px-3 py-2 hover:bg-white/[0.02] transition-colors`}>
+                  <span className="flex items-center gap-2 text-white/75 text-xs">
+                    <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#83b5ff]/28 bg-[linear-gradient(145deg,rgba(79,142,247,0.22),rgba(21,63,132,0.26))] text-[#9bc2ff] shadow-[0_12px_28px_-18px_rgba(79,142,247,0.95),inset_0_1px_0_rgba(255,255,255,0.18)]">
+                      <span className="absolute inset-0.5 rounded-lg bg-white/[0.04]" />
+                      <span className="relative text-[10px]">
                       {exampleIcons[i] || exampleIcons[0]}
                       </span>
                     </span>
-                    <span className="truncate">{stripLeadingIcon(row.cat)}</span>
+                    <span className="truncate text-[11px]">{stripLeadingIcon(row.cat)}</span>
                   </span>
-                  <span className="text-white/40 text-sm tabular-nums text-right whitespace-nowrap">{row.spend}</span>
+                  <span className="text-white/40 text-xs tabular-nums text-right whitespace-nowrap">{row.spend}</span>
                   <div className="flex items-center gap-1 min-w-0">
-                    <span className="text-white/50 text-xs truncate">{row.best}</span>
-                    <span className="flex-shrink-0 text-[10px] font-bold px-1 py-0.5 rounded-md bg-[#4F8EF7]/15 text-[#4F8EF7]">
+                    <span className="text-white/50 text-[10px] truncate">{row.best}</span>
+                    <span className="flex-shrink-0 text-[9px] font-bold px-0.5 py-0.5 rounded-md bg-[#4F8EF7]/15 text-[#4F8EF7]">
                       {row.pct}
                     </span>
                   </div>
-                  <span className="text-mint text-sm font-bold tabular-nums text-right whitespace-nowrap">+{row.earn}</span>
+                  <span className="text-mint text-xs font-bold tabular-nums text-right whitespace-nowrap">+{row.earn}</span>
                 </div>
               ))}
               </div>
             </div>
 
             {/* Total row */}
-            <div className="px-5 py-4 bg-mint/[0.04] border-t border-mint/10">
+            <div className="px-3 py-3 bg-mint/[0.04] border-t border-mint/10">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <p className="text-white/40 text-xs">{lt.cashbackExampleTotal}</p>
-                  <p className="text-2xl font-black text-mint tabular-nums mt-0.5">
+                  <p className="text-white/40 text-[9px]">{lt.cashbackExampleTotal}</p>
+                  <p className="text-xl font-black text-mint tabular-nums mt-0.5">
                     +{totalMonthly.toLocaleString('ru-RU')} ₸
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white/25 text-xs">{lt.cashbackExampleYear}</p>
-                  <p className="text-lg font-black text-white/60 tabular-nums mt-0.5">
+                  <p className="text-white/25 text-[9px]">{lt.cashbackExampleYear}</p>
+                  <p className="text-sm font-black text-white/60 tabular-nums mt-0.5">
                     ≈ {totalAnnual.toLocaleString('ru-RU')} ₸
                   </p>
                 </div>
@@ -197,46 +197,46 @@ export default function CashbackTeaser({ onOpenModal }) {
             </div>
           </div>
 
-          {/* Right: how it works + bank logos */}
-          <div className="flex flex-col gap-4">
+          {/* Right: how it works + bank logos - compact */}
+          <div className="flex flex-col gap-3">
 
             {/* 3 steps */}
             {lt.cashbackSteps.map((step, i) => ({ ...step, n: String(i + 1) })).map((step) => (
-              <div key={step.n} className="flex items-start gap-4 bg-white/[0.025] border border-white/[0.06] rounded-xl p-4 hover:border-white/10 transition-colors">
-                <div className="w-8 h-8 rounded-xl bg-mint/10 border border-mint/20 flex items-center justify-center flex-shrink-0 text-sm font-black text-mint">
+              <div key={step.n} className="flex items-start gap-3 bg-white/[0.025] border border-white/[0.06] rounded-lg p-3 hover:border-white/10 transition-colors">
+                <div className="w-6 h-6 rounded-lg bg-mint/10 border border-mint/20 flex items-center justify-center flex-shrink-0 text-xs font-black text-mint">
                   {step.n}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-white/80 text-sm font-semibold mb-0.5">
+                  <p className="text-white/80 text-xs font-semibold mb-0.5">
                     {step.title}
                   </p>
-                  <p className="text-white/35 text-xs leading-relaxed">{step.desc}</p>
+                  <p className="text-white/35 text-[10px] leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             ))}
 
-            {/* Bank logos strip */}
-            <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-              <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mb-3">{lt.cashbackBanksLabel}</p>
-              <div className="flex flex-wrap gap-2">
-                {banks.map((bank) => (
+            {/* Bank logos strip - hidden on mobile */}
+            <div className="hidden sm:block bg-white/[0.02] border border-white/[0.06] rounded-lg p-3">
+              <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest mb-2">{lt.cashbackBanksLabel}</p>
+              <div className="flex flex-wrap gap-1">
+                {banks.slice(0, 8).map((bank) => (
                   <div key={bank.name}
-                    className="flex min-w-[104px] items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2.5 py-1.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+                    className="flex min-w-[90px] items-center gap-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2 py-1">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-white">
                       <img src={bank.icon} alt="" className="h-full w-full object-contain" loading="lazy" />
                     </span>
-                    <span className="text-white/45 text-xs font-medium">{bank.name}</span>
+                    <span className="text-white/45 text-[10px] font-medium">{bank.name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* CTA */}
+            {/* CTA - smaller */}
             <button
               onClick={onOpenModal}
-              className="w-full py-4 rounded-xl bg-mint text-[#24272b] font-black text-sm hover:bg-mint/90 active:scale-[0.99] transition-all shadow-[0_0_30px_rgba(79,142,247,0.2)] flex flex-col items-center gap-0.5">
+              className="w-full py-3 rounded-lg bg-mint text-[#24272b] font-black text-xs hover:bg-mint/90 active:scale-[0.99] transition-all shadow-[0_0_20px_rgba(79,142,247,0.2)] flex flex-col items-center gap-0.5">
               <span>{lt.cashbackCta}</span>
-              <span className="text-[#24272b]/50 text-[11px] font-normal">{lt.cashbackCtaSub}</span>
+              <span className="text-[#24272b]/50 text-[10px] font-normal">{lt.cashbackCtaSub}</span>
             </button>
           </div>
         </div>

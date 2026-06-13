@@ -40,11 +40,11 @@ function LandingPage() {
       <Navbar onOpenModal={startProduct} onOpenLogin={openLogin} />
       <Hero onOpenModal={startProduct} />
       <AppDemo />
-      <CashbackTeaser onOpenModal={startProduct} />
       <Features />
       <HowItWorks onOpenModal={startProduct} />
       <ForBusiness onOpenModal={startProduct} />
       <Pricing onOpenModal={startProduct} />
+      <CashbackTeaser onOpenModal={startProduct} />
       <ContactSection />
       <Footer />
       {authModal && (
