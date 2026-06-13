@@ -19,7 +19,7 @@ export default function HowItWorks() {
           {lt.steps.map((step, i) => (
             <div
               key={i}
-              className={`bg-[#2b2f34] border border-white/10 rounded-2xl p-7 ${i === 4 ? 'md:col-span-2 md:max-w-sm' : ''}`}
+              className="bg-[#2b2f34] border border-white/10 rounded-2xl p-7"
             >
               <span className="text-xs bg-white/10 text-white/50 px-3 py-1 rounded-full font-medium">
                 {lt.stepLabel} {String(i + 1).padStart(2, '0')}

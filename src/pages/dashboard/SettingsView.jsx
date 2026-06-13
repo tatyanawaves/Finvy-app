@@ -239,6 +239,21 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
             )}
           </div>
 
+          {/* Integration section */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+            <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">
+              {lang === 'en' ? 'Integrations' : 'Интеграции'}
+            </p>
+            <button type="button" onClick={async () => {
+              const token = crypto.randomUUID();
+              await supabase.from('telegram_auth_tokens').insert({ token, user_id: userId });
+              window.open(`https://t.me/finvy_finance_bot?start=${token}`, '_blank');
+            }}
+              className="w-full py-2.5 rounded-lg text-xs font-medium bg-mint/10 text-mint border border-mint/20 hover:bg-mint/20 transition-colors">
+              {lang === 'en' ? 'Link Telegram Bot' : 'Привязать Telegram-бота'}
+            </button>
+          </div>
+
           {/* Save button */}
           <button type="submit" disabled={saving}
             className={`w-full py-3 rounded-xl text-sm font-bold transition-all ${

@@ -211,7 +211,7 @@ export default function Hero({ onOpenModal }) {
           <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row lg:items-start">
             <button
               onClick={onOpenModal}
-              className="group relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#38bdf8] to-[#34d399] px-8 py-4.5 text-base font-extrabold text-white shadow-[0_20px_40px_-15px_rgba(56,189,248,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_50px_-12px_rgba(56,189,248,0.6)] active:translate-y-0 sm:w-auto"
+              className="group relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-[#38bdf8] to-[#34d399] px-4 py-2 text-sm font-extrabold text-white shadow-[0_20px_40px_-15px_rgba(56,189,248,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_50px_-12px_rgba(56,189,248,0.6)] active:translate-y-0 whitespace-nowrap"
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <span>{lt.tryFree}</span>

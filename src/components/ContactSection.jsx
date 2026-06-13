@@ -58,12 +58,12 @@ export default function ContactSection() {
   }
 
   return (
-    <section className="bg-mint-bg grid-bg-light px-4 py-14">
-      <div className="max-w-4xl mx-auto bg-white/70 border border-[#24272b]/10 rounded-2xl p-6 md:p-8 shadow-sm">
+    <section className="bg-[#24272b] grid-bg px-4 py-14">
+      <div className="max-w-4xl mx-auto bg-[#24272b] border border-white/10 rounded-2xl p-6 md:p-8 shadow-sm">
         <div className="grid md:grid-cols-[1fr_1.15fr] gap-6 md:gap-8 items-center">
           <div>
-            <h2 className="text-[#24272b] font-black text-2xl md:text-3xl">{copy.title}</h2>
-            <p className="text-[#24272b]/55 text-sm mt-2 leading-relaxed">{copy.desc}</p>
+            <h2 className="text-white font-black text-2xl md:text-3xl">{copy.title}</h2>
+            <p className="text-white/55 text-sm mt-2 leading-relaxed">{copy.desc}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -75,12 +75,12 @@ export default function ContactSection() {
                   setStatus('idle')
                 }}
                 placeholder={copy.placeholder}
-                className="flex-1 bg-white/70 border border-[#24272b]/10 rounded-xl px-4 py-3 text-sm text-[#24272b] placeholder-[#24272b]/35 outline-none focus:border-mint/50 transition-colors"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/35 outline-none focus:border-mint/50 transition-colors"
               />
               <button
                 type="submit"
                 disabled={status === 'sending'}
-                className="bg-mint text-[#24272b] font-bold text-sm px-6 py-3 rounded-xl hover:bg-mint/90 transition-colors disabled:opacity-60"
+                className="bg-mint text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-mint/90 transition-colors disabled:opacity-60"
               >
                 {status === 'sending' ? '...' : copy.button}
               </button>
