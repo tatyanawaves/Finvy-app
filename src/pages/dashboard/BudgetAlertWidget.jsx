@@ -6,11 +6,13 @@
 
 import { useNavigate } from 'react-router-dom'
 import { useBudget, currentMonthKey } from '../../hooks/useBudget'
+import { useLanguage } from '../../context/LanguageContext'
 
 const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
 
 export default function BudgetAlertWidget({ userId, demo, basePath = '/dashboard' }) {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   // Skip the hook in demo mode entirely — widget hidden there
   const { rows, loading } = useBudget(currentMonthKey(), { userId: demo ? null : userId })
 
@@ -43,9 +45,9 @@ export default function BudgetAlertWidget({ userId, demo, basePath = '/dashboard
 
         <div className="flex-1 min-w-0">
           <p className="text-white/90 text-xs sm:text-sm font-semibold leading-tight">
-            {overCount > 0 && `${overCount} ${overCount === 1 ? 'категория превышена' : 'категорий превышено'}`}
+            {overCount > 0 && `${overCount} ${overCount === 1 ? (t.categoryExceeded || 'категория превышена') : (t.categoriesExceeded || 'категорий превышено')}`}
             {overCount > 0 && warningCount > 0 && ' · '}
-            {warningCount > 0 && `${warningCount} близко к лимиту`}
+            {warningCount > 0 && `${warningCount} ${t.closeToLimit || 'близко к лимиту'}`}
           </p>
           <p className="text-white/50 text-[11px] sm:text-xs mt-0.5 truncate">
             {critical.map((r) => {
@@ -56,7 +58,7 @@ export default function BudgetAlertWidget({ userId, demo, basePath = '/dashboard
         </div>
 
         <span className="text-white/40 group-hover:text-white/70 text-xs font-medium flex-shrink-0 hidden sm:inline">
-          Открыть бюджет →
+          {t.openBudget || 'Открыть бюджет'} →
         </span>
         <span className="text-white/40 group-hover:text-white/70 sm:hidden flex-shrink-0">→</span>
       </div>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import {
@@ -56,9 +56,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function ReportsView({ userId, profileType = 'business' }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const isPersonal = profileType === 'personal'
-  const netLabel = isPersonal ? 'Остаток' : t.reportProfit
+  const netLabel = isPersonal ? (t.netLabelPersonal || 'Остаток') : t.reportProfit
   const [showCashback, setShowCashback] = useState(false)
   const [showImport, setShowImport] = useState(false)
 
@@ -103,7 +103,7 @@ export default function ReportsView({ userId, profileType = 'business' }) {
     // Group by category
     const catMap = {}
     txs.forEach(tx => {
-      const cat = tx.category || '—'
+      const cat = tx.category || (t.noCategory || '—')
       if (!catMap[cat]) catMap[cat] = { name: cat, income: 0, expense: 0 }
       if (tx.type === 'income') catMap[cat].income += Math.abs(tx.amount || 0)
       else catMap[cat].expense += Math.abs(tx.amount || 0)
@@ -123,11 +123,11 @@ export default function ReportsView({ userId, profileType = 'business' }) {
       else dayMap[day].expense += Math.abs(tx.amount || 0)
     })
     const dayArr = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date))
-      .map(d => ({ ...d, label: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }))
+      .map(d => ({ ...d, label: new Date(d.date).toLocaleDateString(lang, { month: 'short', day: 'numeric' }) }))
     setData(dayArr)
 
     setLoading(false)
-  }, [userId, preset, customFrom, customTo])
+  }, [userId, preset, customFrom, customTo, lang, t])
 
   useEffect(() => { fetchReport() }, [fetchReport])
 
@@ -162,16 +162,18 @@ export default function ReportsView({ userId, profileType = 'business' }) {
               className="flex-shrink-0 bg-[#4F8EF7]/10 hover:bg-[#4F8EF7]/20 border border-[#4F8EF7]/25 text-[#4F8EF7] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
             >
               <span>📄</span>
-              Импорт выписки
+              {t.importStatement}
             </button>
             {/* Cashback report CTA */}
-            <button
-              onClick={() => setShowCashback(true)}
-              className="flex-shrink-0 bg-mint/10 hover:bg-mint/20 border border-mint/25 text-mint text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <span>💳</span>
-              Анализ кэшбэков
-            </button>
+            {lang !== 'en' && (
+              <button
+                onClick={() => setShowCashback(true)}
+                className="flex-shrink-0 bg-mint/10 hover:bg-mint/20 border border-mint/25 text-mint text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <span>💳</span>
+                {t.cashbackAnalysis}
+              </button>
+            )}
             <div className="w-px h-4 bg-white/10 flex-shrink-0" />
             <button onClick={exportCsv} className="flex-shrink-0 text-white/50 hover:text-white border border-white/10 hover:border-white/20 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 9h8M6 1v6M3.5 5l2.5 2.5L9 5"/></svg>
@@ -227,7 +229,7 @@ export default function ReportsView({ userId, profileType = 'business' }) {
                     {card.plain ? card.value : (
                       <>
                         {card.value >= 0 ? '' : '−'}
-                        {Math.abs(card.value).toLocaleString('en', { maximumFractionDigits: 0 })}
+                        {Math.abs(card.value).toLocaleString(lang, { maximumFractionDigits: 0 })}
                       </>
                     )}
                   </p>
@@ -274,11 +276,11 @@ export default function ReportsView({ userId, profileType = 'business' }) {
                       {catData.map((cat, i) => (
                         <div key={i} className="grid grid-cols-[1fr_100px_100px_100px] gap-4 py-2.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                           <p className="text-white/70 text-xs font-medium">{cat.name}</p>
-                          <p className="text-mint text-xs font-medium">{cat.income > 0 ? '+' + cat.income.toLocaleString('en', { maximumFractionDigits: 0 }) : '—'}</p>
-                          <p className="text-red-400 text-xs font-medium">{cat.expense > 0 ? '−' + cat.expense.toLocaleString('en', { maximumFractionDigits: 0 }) : '—'}</p>
+                          <p className="text-mint text-xs font-medium">{cat.income > 0 ? '+' + cat.income.toLocaleString(lang, { maximumFractionDigits: 0 }) : '—'}</p>
+                          <p className="text-red-400 text-xs font-medium">{cat.expense > 0 ? '−' + cat.expense.toLocaleString(lang, { maximumFractionDigits: 0 }) : '—'}</p>
                           <p className={`text-xs font-medium ${(cat.income - cat.expense) >= 0 ? 'text-mint' : 'text-red-400'}`}>
                             {(cat.income - cat.expense) >= 0 ? '+' : '−'}
-                            {Math.abs(cat.income - cat.expense).toLocaleString('en', { maximumFractionDigits: 0 })}
+                            {Math.abs(cat.income - cat.expense).toLocaleString(lang, { maximumFractionDigits: 0 })}
                           </p>
                         </div>
                       ))}

@@ -60,13 +60,30 @@ function getPeriodDates(regime, deadline) {
 }
 
 export default function TaxWidget({ userId, currency }) {
-  const { lang } = useLanguage()
-  const isRu = lang !== 'en'
+  const { lang, t } = useLanguage()
   const [regime, setRegime] = useState('simplified_ip')
   const [income, setIncome] = useState(0)
   const [expense, setExpense] = useState(0)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
+
+  const TAX_REGIMES = {
+    simplified_ip:  { rate: 0.03, base: 'income', label: t.taxSimplifiedIP || 'Simplified (IE)', form: 'ф.910' },
+    simplified_too: { rate: 0.03, base: 'income', label: t.taxSimplifiedTOO || 'Simplified (LLC)', form: 'ф.910' },
+    general_ip:     { rate: 0.10, base: 'profit', label: t.taxGeneralIP || 'General (IE)', form: 'ф.220' },
+    general_too:    { rate: 0.20, base: 'profit', label: t.taxGeneralTOO || 'General (LLC, CIT)', form: 'ф.100' },
+  }
+
+  function getPeriodLabel(regime, deadline) {
+    const m = deadline.getMonth()
+    if (regime.startsWith('simplified')) {
+      return m === 7
+        ? (t.taxHalf1 || '1st half-year')
+        : (t.taxHalf2 || '2nd half-year')
+    }
+    const qMap = { 4: 'Q1', 7: 'Q2', 10: 'Q3', 1: 'Q4' }
+    return qMap[m] || ''
+  }
 
   useEffect(() => {
     loadData()
@@ -121,7 +138,7 @@ export default function TaxWidget({ userId, currency }) {
 
   const regimeInfo = TAX_REGIMES[regime]
   const deadline = getNextDeadline(regime)
-  const periodLabel = getPeriodLabel(regime, deadline, lang)
+  const periodLabel = getPeriodLabel(regime, deadline)
   const profit = income - expense
   const taxBase = regimeInfo.base === 'income' ? income : Math.max(0, profit)
   const taxAmount = Math.round(taxBase * regimeInfo.rate)
@@ -129,7 +146,7 @@ export default function TaxWidget({ userId, currency }) {
 
   const fmt = (n) => {
     const sym = { USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }[currency] || currency
-    return `${sym} ${n.toLocaleString('ru-RU')}`
+    return `${sym} ${n.toLocaleString(lang === 'kz' ? 'kk-KZ' : (lang === 'ru' ? 'ru-RU' : 'en-US'))}`
   }
 
   if (loading) {
@@ -137,7 +154,7 @@ export default function TaxWidget({ userId, currency }) {
       <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-mint border-t-transparent rounded-full animate-spin" />
-          <span className="text-white/30 text-xs">{isRu ? 'Загрузка налогов...' : 'Loading taxes...'}</span>
+          <span className="text-white/30 text-xs">{t.taxLoading || 'Loading taxes...'}</span>
         </div>
       </div>
     )
@@ -150,14 +167,14 @@ export default function TaxWidget({ userId, currency }) {
         <div className="flex items-center gap-2">
           <span className="text-base">🧾</span>
           <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">
-            {isRu ? 'Налоги' : 'Taxes'}
+            {t.taxes || 'Taxes'}
           </span>
         </div>
         <button
           onClick={() => setEditing(!editing)}
           className="text-white/30 hover:text-white/60 text-xs transition-colors"
         >
-          {isRu ? 'Изменить режим' : 'Change regime'}
+          {t.taxChangeRegime || 'Change regime'}
         </button>
       </div>
 
@@ -174,7 +191,7 @@ export default function TaxWidget({ userId, currency }) {
                   : 'bg-white/5 text-white/40 border border-white/5 hover:text-white/70'
               }`}
             >
-              {isRu ? info.labelRu : info.labelEn}
+              {info.label}
             </button>
           ))}
         </div>
@@ -183,7 +200,7 @@ export default function TaxWidget({ userId, currency }) {
       {/* Current regime badge */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40">
-          {isRu ? regimeInfo.labelRu : regimeInfo.labelEn}
+          {regimeInfo.label}
         </span>
         <span className="text-[10px] text-white/30">
           {periodLabel}
@@ -193,18 +210,18 @@ export default function TaxWidget({ userId, currency }) {
       {/* Tax calculation */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-white/40 text-xs">{isRu ? 'Доход за период' : 'Period income'}</span>
+          <span className="text-white/40 text-xs">{t.taxPeriodIncome || 'Period income'}</span>
           <span className="text-white/70 text-xs font-medium">{fmt(income)}</span>
         </div>
 
         {regimeInfo.base === 'profit' && (
           <>
             <div className="flex items-center justify-between">
-              <span className="text-white/40 text-xs">{isRu ? 'Расход за период' : 'Period expense'}</span>
+              <span className="text-white/40 text-xs">{t.taxPeriodExpense || 'Period expense'}</span>
               <span className="text-white/70 text-xs font-medium">{fmt(expense)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-white/40 text-xs">{isRu ? 'Прибыль' : 'Profit'}</span>
+              <span className="text-white/40 text-xs">{t.taxProfit || 'Profit'}</span>
               <span className={`text-xs font-medium ${profit >= 0 ? 'text-mint' : 'text-red-400'}`}>
                 {fmt(profit)}
               </span>
@@ -216,7 +233,7 @@ export default function TaxWidget({ userId, currency }) {
 
         <div className="flex items-center justify-between">
           <span className="text-white/50 text-xs font-medium">
-            {isRu ? `Налог (${(regimeInfo.rate * 100)}%)` : `Tax (${(regimeInfo.rate * 100)}%)`}
+            {`${t.taxLabel || 'Tax'} (${(regimeInfo.rate * 100)}%)`}
           </span>
           <span className="text-white text-sm font-bold">{fmt(taxAmount)}</span>
         </div>
@@ -228,16 +245,12 @@ export default function TaxWidget({ userId, currency }) {
           <span className="text-sm">{daysLeft <= 14 ? '⚠️' : '📅'}</span>
           <div className="flex-1">
             <p className={`text-[10px] font-medium ${daysLeft <= 14 ? 'text-red-400' : 'text-white/50'}`}>
-              {isRu
-                ? `Срок сдачи ${regimeInfo.formRu}: ${deadline.toLocaleDateString('ru-RU')}`
-                : `${regimeInfo.formEn} due: ${deadline.toLocaleDateString('en-US')}`}
+              {`${t.taxDeadlineLabel || 'Deadline'} ${regimeInfo.form}: ${deadline.toLocaleDateString(lang === 'kz' ? 'kk-KZ' : (lang === 'ru' ? 'ru-RU' : 'en-US'))}`}
             </p>
             <p className="text-[10px] text-white/30">
               {daysLeft === 0
-                ? (isRu ? 'Сегодня!' : 'Today!')
-                : isRu
-                  ? `${daysLeft} ${daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'} осталось`
-                  : `${daysLeft} day${daysLeft === 1 ? '' : 's'} left`}
+                ? (t.taxToday || 'Today!')
+                : `${daysLeft} ${daysLeft === 1 ? (t.taxDayLeft || 'day left') : (t.taxDaysLeft || 'days left')}`}
             </p>
           </div>
         </div>
@@ -245,9 +258,7 @@ export default function TaxWidget({ userId, currency }) {
         {/* Advice */}
         {taxAmount > 0 && (
           <p className="text-[10px] text-white/30 mt-1">
-            {isRu
-              ? `💡 Отложите ${fmt(taxAmount)} заранее, чтобы избежать штрафов`
-              : `💡 Set aside ${fmt(taxAmount)} in advance to avoid penalties`}
+            {t.taxAdvice?.replace('{amount}', fmt(taxAmount)) || `💡 Set aside ${fmt(taxAmount)} in advance to avoid penalties`}
           </p>
         )}
       </div>

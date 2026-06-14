@@ -104,7 +104,7 @@ export default function CalendarView({ userId }) {
 
   const daysInMonth = getDaysInMonth(year, month)
   const firstDay = getFirstDayOfMonth(year, month)
-  const monthNames = MONTH_NAMES[lang] || MONTH_NAMES.en
+  const monthNames = t.monthsNames || MONTH_NAMES[lang] || MONTH_NAMES.en
 
   // Build calendar grid (6 weeks max)
   const cells = []
@@ -181,12 +181,12 @@ export default function CalendarView({ userId }) {
                             )}
                             {data.plannedIncome > 0 && (
                               <div className="text-[10px] text-[#4F8EF7] font-medium leading-tight truncate">
-                                план +{data.plannedIncome.toLocaleString('en', { maximumFractionDigits: 0 })}
+                                {t.planned || 'план'} +{data.plannedIncome.toLocaleString('en', { maximumFractionDigits: 0 })}
                               </div>
                             )}
                             {data.plannedExpense > 0 && (
                               <div className="text-[10px] text-amber-300 font-medium leading-tight truncate">
-                                план −{data.plannedExpense.toLocaleString('en', { maximumFractionDigits: 0 })}
+                                {t.planned || 'план'} −{data.plannedExpense.toLocaleString('en', { maximumFractionDigits: 0 })}
                               </div>
                             )}
                           </div>
@@ -222,7 +222,7 @@ export default function CalendarView({ userId }) {
                       <div className="flex items-center justify-between mb-0.5">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium
                           ${tx.planned ? 'bg-[#4F8EF7]/10 text-[#4F8EF7]' : tx.type === 'income' ? 'bg-mint/10 text-mint' : tx.type === 'expense' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-white/40'}`}>
-                          {tx.planned ? 'план' : t[tx.type]}
+                          {tx.planned ? (t.planned || 'план') : t[tx.type]}
                         </span>
                         <span className={`text-xs font-bold ${tx.planned ? 'text-[#4F8EF7]' : tx.type === 'income' ? 'text-mint' : tx.type === 'expense' ? 'text-red-400' : 'text-white/50'}`}>
                           {tx.type === 'income' ? '+' : tx.type === 'expense' ? '−' : ''}
@@ -252,13 +252,13 @@ export default function CalendarView({ userId }) {
                 )}
                 {txByDay[selectedDay].plannedIncome > 0 && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-white/40">План доход</span>
+                    <span className="text-white/40">{t.plannedLabel || 'План'} {t.income}</span>
                     <span className="text-[#4F8EF7] font-medium">+{txByDay[selectedDay].plannedIncome.toLocaleString()}</span>
                   </div>
                 )}
                 {txByDay[selectedDay].plannedExpense > 0 && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-white/40">План расход</span>
+                    <span className="text-white/40">{t.plannedLabel || 'План'} {t.expense}</span>
                     <span className="text-amber-300 font-medium">−{txByDay[selectedDay].plannedExpense.toLocaleString()}</span>
                   </div>
                 )}

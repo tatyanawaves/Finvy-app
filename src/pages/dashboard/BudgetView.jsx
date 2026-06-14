@@ -6,15 +6,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useState } from 'react'
+import { useLanguage } from '../../context/LanguageContext'
 import { useBudget, currentMonthKey, shiftMonth, rolloverMonth } from '../../hooks/useBudget'
 import { generateBudgetProposal, applyBudgetProposal } from '../../lib/budgetAI'
 
 const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
 
-function formatMonthLabel(monthKey) {
+function formatMonthLabel(monthKey, t) {
   // monthKey: 'YYYY-MM'
   const [y, m] = monthKey.split('-')
-  const months = [
+  const months = t.monthsNames || [
     'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
   ]
@@ -22,7 +23,7 @@ function formatMonthLabel(monthKey) {
 }
 
 // ─── Single category row ─────────────────────────────────────────────────────
-function BudgetRow({ row, onEdit, onDelete }) {
+function BudgetRow({ row, onEdit, onDelete, t }) {
   const { category, planned, rolloverIn, cap, spent, remaining, percentUsed, status, unbudgeted } = row
   const pct = Math.min(100, Math.round(percentUsed * 100))
 
@@ -45,7 +46,7 @@ function BudgetRow({ row, onEdit, onDelete }) {
             <p className="text-white/90 font-medium text-sm truncate">{category}</p>
             {unbudgeted && (
               <span className="text-[10px] uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">
-                нет лимита
+                {t.noLimit || 'нет лимита'}
               </span>
             )}
             {rolloverIn !== 0 && (
@@ -54,12 +55,12 @@ function BudgetRow({ row, onEdit, onDelete }) {
                   ? 'text-mint/80 bg-mint/10 border-mint/20'
                   : 'text-red-400/80 bg-red-400/10 border-red-400/20'
               }`}>
-                {rolloverIn > 0 ? '+' : ''}{fmt(rolloverIn)} перенос
+                {rolloverIn > 0 ? '+' : ''}{fmt(rolloverIn)} {t.rollover || 'перенос'}
               </span>
             )}
           </div>
           <p className="text-white/40 text-xs mt-0.5">
-            {fmt(spent)} ₸ из {unbudgeted ? '—' : fmt(cap)}{cap > 0 && ` ₸`}
+            {fmt(spent)} ₸ {t.fromLabel || 'из'} {unbudgeted ? '—' : fmt(cap)}{cap > 0 && ` ₸`}
           </p>
         </div>
 
@@ -80,7 +81,7 @@ function BudgetRow({ row, onEdit, onDelete }) {
             {remaining >= 0 ? '' : '−'}{fmt(Math.abs(remaining))} ₸
           </p>
           <p className="text-[10px] text-white/30 mt-0.5">
-            {remaining >= 0 ? 'осталось' : 'перерасход'}
+            {remaining >= 0 ? (t.remaining || 'осталось') : (t.overrun || 'перерасход')}
           </p>
         </div>
 
@@ -89,7 +90,7 @@ function BudgetRow({ row, onEdit, onDelete }) {
           <button
             onClick={() => onEdit(row)}
             className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-xs"
-            title={unbudgeted ? 'Создать бюджет' : 'Изменить'}
+            title={unbudgeted ? (t.createBudget || 'Создать бюджет') : (t.edit || 'Изменить')}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
               <path d="M16 4l4 4-11 11H5v-4L16 4Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -99,7 +100,7 @@ function BudgetRow({ row, onEdit, onDelete }) {
             <button
               onClick={() => onDelete(row)}
               className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 text-xs"
-              title="Удалить"
+              title={t.delete || 'Удалить'}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                 <path d="M5 7h14M9 7v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M7 7l1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -113,7 +114,7 @@ function BudgetRow({ row, onEdit, onDelete }) {
 }
 
 // ─── Edit modal ──────────────────────────────────────────────────────────────
-function EditBudgetModal({ row, onClose, onSave }) {
+function EditBudgetModal({ row, onClose, onSave, t }) {
   const [planned, setPlanned] = useState(row.planned ? String(row.planned) : '')
   const [notes, setNotes] = useState(row.notes || '')
   const [rolloverEnabled, setRolloverEnabled] = useState(row.rolloverEnabled !== false)
@@ -124,7 +125,7 @@ function EditBudgetModal({ row, onClose, onSave }) {
     e.preventDefault()
     const amount = Number(planned.replace(/\s/g, ''))
     if (Number.isNaN(amount) || amount < 0) {
-      setError('Введите положительную сумму')
+      setError(t.errPositiveAmount || 'Введите положительную сумму')
       return
     }
     setSaving(true)
@@ -150,7 +151,7 @@ function EditBudgetModal({ row, onClose, onSave }) {
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <h3 className="text-white font-semibold text-sm">
-            {row.id ? 'Изменить бюджет' : 'Создать бюджет'}
+            {row.id ? (t.editBudget || 'Изменить бюджет') : (t.createBudget || 'Создать бюджет')}
           </h3>
           <button
             type="button"
@@ -163,14 +164,14 @@ function EditBudgetModal({ row, onClose, onSave }) {
 
         <div className="px-5 py-4 space-y-4">
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Категория</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.category || 'Категория'}</label>
             <p className="text-white font-medium text-sm bg-white/5 px-3 py-2.5 rounded-lg border border-white/10">
               {row.category}
             </p>
           </div>
 
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Запланировано на месяц, ₸ *</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.plannedPerMonth || 'Запланировано на месяц, ₸ *'}</label>
             <input
               type="text"
               inputMode="numeric"
@@ -183,12 +184,12 @@ function EditBudgetModal({ row, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Заметка</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.note || 'Заметка'}</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Например: Magnum + Galmart"
+              placeholder={t.notePlaceholder || "Например: Magnum + Galmart"}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-mint/40 transition-colors"
             />
           </div>
@@ -201,9 +202,9 @@ function EditBudgetModal({ row, onClose, onSave }) {
               className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 text-mint focus:ring-mint/30"
             />
             <span>
-              <span className="text-white/85 text-xs font-medium block">Переносить остаток</span>
+              <span className="text-white/85 text-xs font-medium block">{t.rolloverEnabled || 'Переносить остаток'}</span>
               <span className="text-white/40 text-[11px] block mt-0.5">
-                Если в конце месяца останутся неиспользованные деньги — добавятся к бюджету следующего месяца
+                {t.rolloverDesc || 'Если в конце месяца останутся неиспользованные деньги — добавятся к бюджету следующего месяца'}
               </span>
             </span>
           </label>
@@ -217,14 +218,14 @@ function EditBudgetModal({ row, onClose, onSave }) {
             onClick={onClose}
             className="text-white/50 hover:text-white text-sm px-4 py-2"
           >
-            Отмена
+            {t.cancel || 'Отмена'}
           </button>
           <button
             type="submit"
             disabled={saving}
             className="bg-mint hover:bg-mint/90 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-colors"
           >
-            {saving ? 'Сохраняю…' : 'Сохранить'}
+            {saving ? (t.saving || 'Сохраняю…') : (t.save || 'Сохранить')}
           </button>
         </div>
       </form>
@@ -233,7 +234,7 @@ function EditBudgetModal({ row, onClose, onSave }) {
 }
 
 // ─── Add new (unused) category form ──────────────────────────────────────────
-function AddCategoryForm({ existingCategories, onAdd }) {
+function AddCategoryForm({ existingCategories, onAdd, t }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [planned, setPlanned] = useState('')
@@ -244,9 +245,9 @@ function AddCategoryForm({ existingCategories, onAdd }) {
     e.preventDefault()
     const cat = name.trim()
     const amount = Number(planned.replace(/\s/g, ''))
-    if (!cat) { setError('Введите название категории'); return }
-    if (existingCategories.includes(cat)) { setError('Такая категория уже есть в бюджете'); return }
-    if (Number.isNaN(amount) || amount < 0) { setError('Введите положительную сумму'); return }
+    if (!cat) { setError(t.errCategoryName || 'Введите название категории'); return }
+    if (existingCategories.includes(cat)) { setError(t.errCategoryExists || 'Такая категория уже есть в бюджете'); return }
+    if (Number.isNaN(amount) || amount < 0) { setError(t.errPositiveAmount || 'Введите положительную сумму'); return }
     setSaving(true)
     setError('')
     const res = await onAdd({ category: cat, plannedAmount: amount })
@@ -261,7 +262,7 @@ function AddCategoryForm({ existingCategories, onAdd }) {
         onClick={() => setOpen(true)}
         className="w-full bg-white/[0.03] hover:bg-white/[0.06] border border-dashed border-white/15 rounded-xl px-4 py-3 text-white/50 hover:text-white text-sm font-medium transition-colors"
       >
-        + Добавить категорию в бюджет
+        {t.addCategoryToBudget || '+ Добавить категорию в бюджет'}
       </button>
     )
   }
@@ -273,7 +274,7 @@ function AddCategoryForm({ existingCategories, onAdd }) {
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Категория (например: Подписки)"
+          placeholder={t.categoryName || "Категория (например: Подписки)"}
           className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-mint/40"
         />
         <input
@@ -281,7 +282,7 @@ function AddCategoryForm({ existingCategories, onAdd }) {
           inputMode="numeric"
           value={planned}
           onChange={(e) => setPlanned(e.target.value)}
-          placeholder="План, ₸"
+          placeholder={`${t.plannedLabel || 'План'}, ₸`}
           className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-mint/40 tabular-nums"
         />
         <div className="flex items-center gap-2">
@@ -290,7 +291,7 @@ function AddCategoryForm({ existingCategories, onAdd }) {
             disabled={saving}
             className="bg-mint hover:bg-mint/90 disabled:opacity-50 text-white font-semibold text-sm px-4 py-2.5 rounded-lg"
           >
-            {saving ? '…' : 'Добавить'}
+            {saving ? '…' : (t.add || 'Добавить')}
           </button>
           <button
             type="button"
@@ -308,6 +309,7 @@ function AddCategoryForm({ existingCategories, onAdd }) {
 
 // Main view
 export default function BudgetView({ userId, profileType = 'business' }) {
+  const { t } = useLanguage() || { t: {} }
   const [month, setMonth] = useState(currentMonthKey())
   const isPersonal = profileType === 'personal'
   const [editing, setEditing] = useState(null)
@@ -325,21 +327,21 @@ export default function BudgetView({ userId, profileType = 'business' }) {
 
   const handleDelete = async (row) => {
     if (!row.id) return
-    if (!confirm(`Удалить бюджет на категорию "${row.category}"?`)) return
+    if (!confirm(`${t.deleteBudgetConfirm || 'Удалить бюджет на категорию'} "${row.category}"?`)) return
     await remove(row.id)
   }
 
   const handleRollover = async () => {
     const prevMonth = shiftMonth(month, -1)
-    if (!confirm(`Перенести остатки с ${formatMonthLabel(prevMonth)} → ${formatMonthLabel(month)}?`)) return
+    if (!confirm(`${t.confirmRollover || 'Перенести остатки с'} ${formatMonthLabel(prevMonth, t)} → ${formatMonthLabel(month, t)}?`)) return
     setRollingOver(true)
     const res = await rolloverMonth({ userId, fromMonth: prevMonth, toMonth: month })
     setRollingOver(false)
     if (res.error) {
-      setAppliedToast(`Ошибка: ${res.error}`)
+      setAppliedToast(`${t.error || 'Ошибка'}: ${res.error}`)
     } else {
       const count = (res.items || []).length
-      setAppliedToast(`Перенесено ${count} ${count === 1 ? 'категория' : 'категорий'}`)
+      setAppliedToast(`${t.rolloverApplied || 'Перенесено'} ${count} ${count === 1 ? (t.categoriesLabel?.one || 'категория') : (t.categoriesLabel?.other || 'категорий')}`)
       if (typeof live?.reload === 'function') live.reload()
     }
     setTimeout(() => setAppliedToast(null), 4000)
@@ -355,46 +357,46 @@ export default function BudgetView({ userId, profileType = 'business' }) {
         {/* ── Header: month switcher + label ── */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div>
-            <h2 className="text-white font-semibold text-lg sm:text-xl">{isPersonal ? 'Личный бюджет' : 'Бюджет'}</h2>
+            <h2 className="text-white font-semibold text-lg sm:text-xl">{isPersonal ? (t.personalBudget || 'Личный бюджет') : (t.budget || 'Бюджет')}</h2>
             <p className="text-white/40 text-xs sm:text-sm mt-0.5">
-              {isPersonal ? 'Планируйте личные траты и регулярные платежи' : 'Сколько ещё можно потратить из запланированного'}
+              {isPersonal ? (t.personalBudgetSubtitle || 'Планируйте личные траты и регулярные платежи') : (t.budgetSubtitle || 'Сколько ещё можно потратить из запланированного')}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-<button
-                  onClick={handleRollover}
-                  disabled={rollingOver}
-                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 hover:text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                  title="Перенести неиспользованные остатки с предыдущего месяца"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
-                  </svg>
-                  <span>{rollingOver ? 'Переношу…' : 'Перенос'}</span>
-                </button>
-                <button
-                  onClick={() => setShowAIProposal(true)}
-                  className="flex items-center gap-1.5 bg-mint/15 hover:bg-mint/25 border border-mint/30 text-mint text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                  title="Сгенерировать бюджет на основе истории"
-                >
-                  <span className="text-base leading-none">✦</span>
-                  <span>AI-бюджет</span>
-                </button>
+            <button
+              onClick={handleRollover}
+              disabled={rollingOver}
+              className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 hover:text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              title={t.rollover || 'Перенос'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
+              </svg>
+              <span>{rollingOver ? '...' : (t.rollover || 'Перенос')}</span>
+            </button>
+            <button
+              onClick={() => setShowAIProposal(true)}
+              className="flex items-center gap-1.5 bg-mint/15 hover:bg-mint/25 border border-mint/30 text-mint text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <span className="text-base leading-none">✦</span>
+              <span>{t.aiBudget || 'AI-бюджет'}</span>
+            </button>
+
             <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
               <button
                 onClick={() => setMonth(shiftMonth(month, -1))}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-                aria-label="Предыдущий месяц"
+                aria-label={t.prevMonth || "Предыдущий месяц"}
               >
                 ‹
               </button>
               <span className="text-white/85 font-medium text-xs sm:text-sm px-3 min-w-[110px] text-center">
-                {formatMonthLabel(month)}
+                {formatMonthLabel(month, t)}
               </span>
               <button
                 onClick={() => setMonth(shiftMonth(month, 1))}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-                aria-label="Следующий месяц"
+                aria-label={t.nextMonth || "Следующий месяц"}
               >
                 ›
               </button>
@@ -405,22 +407,22 @@ export default function BudgetView({ userId, profileType = 'business' }) {
         {/* ── Summary strip ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           <SummaryCard
-            label="Доход"
+            label={t.income || 'Доход'}
             value={`${fmt(monthIncome)} ₸`}
             tone="neutral"
           />
           <SummaryCard
-            label="Запланировано"
+            label={t.planned || 'Запланировано'}
             value={`${fmt(totals.planned)} ₸`}
             tone="neutral"
           />
           <SummaryCard
-            label="Потрачено"
+            label={t.spent || 'Потрачено'}
             value={`${fmt(totals.spent)} ₸`}
             tone="neutral"
           />
           <SummaryCard
-            label={totals.remaining >= 0 ? 'Осталось всего' : 'Перерасход'}
+            label={totals.remaining >= 0 ? (t.remainingTotal || 'Осталось всего') : (t.overrun || 'Перерасход')}
             value={`${totals.remaining >= 0 ? '' : '−'}${fmt(Math.abs(totals.remaining))} ₸`}
             tone={totals.remaining >= 0 ? 'mint' : 'red'}
           />
@@ -437,14 +439,14 @@ export default function BudgetView({ userId, profileType = 'business' }) {
           }`}>
             <p className="text-xs sm:text-sm">
               {toBudget > 0 && (<>
-                <span className="font-bold">К распределению: {fmt(toBudget)} ₸</span>
-                <span className="text-white/50 ml-2">— назначь их на категории, чтобы каждый тенге имел работу</span>
+                <span className="font-bold">{t.toBudgetLabel || 'К распределению'}: {fmt(toBudget)} ₸</span>
+                <span className="text-white/50 ml-2">{t.assignToCategories || '— назначь их на категории, чтобы каждый тенге имел работу'}</span>
               </>)}
               {toBudget < 0 && (<>
-                <span className="font-bold">Перебюджетировано: {fmt(Math.abs(toBudget))} ₸</span>
-                <span className="text-white/50 ml-2">— планы превышают доход; убавь лимиты в категориях</span>
+                <span className="font-bold">{t.overBudget || 'Перебюджетировано'}: {fmt(Math.abs(toBudget))} ₸</span>
+                <span className="text-white/50 ml-2">{t.plansExceedIncome || '— планы превышают доход; убавь лимиты в категориях'}</span>
               </>)}
-              {toBudget === 0 && <span className="font-medium">Бюджет сбалансирован — каждый тенге распределён.</span>}
+              {toBudget === 0 && <span className="font-medium">{t.budgetBalanced || 'Бюджет сбалансирован — каждый тенге распределён.'}</span>}
             </p>
           </div>
         )}
@@ -454,12 +456,12 @@ export default function BudgetView({ userId, profileType = 'business' }) {
           <div className="flex flex-wrap gap-2 mb-4">
             {overCount > 0 && (
               <div className="text-xs bg-red-500/10 border border-red-500/20 text-red-400 rounded-full px-3 py-1.5">
-                {overCount} {overCount === 1 ? 'категория превышена' : 'категорий превышено'}
+                {overCount} {overCount === 1 ? (t.categoryExceeded || 'категория превышена') : (t.categoriesExceeded || 'категорий превышено')}
               </div>
             )}
             {warningCount > 0 && (
               <div className="text-xs bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-full px-3 py-1.5">
-                {warningCount} близко к лимиту
+                {warningCount} {t.closeToLimit || 'близко к лимиту'}
               </div>
             )}
           </div>
@@ -474,36 +476,38 @@ export default function BudgetView({ userId, profileType = 'business' }) {
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 mb-4 text-sm">
-            Ошибка: {error}
+            {t.error || 'Ошибка'}: {error}
           </div>
         )}
 
         {/* ── Rows ── */}
         {!loading && (
-          <div className="space-y-2 mb-4">
-            {rows.length === 0 && (
-              <div className="text-center py-10 text-white/40 text-sm">
-                В этом месяце пока нет бюджетов.<br />
-                Добавь первую категорию ниже.
-              </div>
-            )}
-            {rows.map((row) => (
-              <BudgetRow
-                key={row.id || `unbudgeted-${row.category}`}
-                row={row}
-                onEdit={setEditing}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
+          <>
+            <div className="space-y-2 mb-4">
+              {rows.length === 0 && (
+                <div className="text-center py-10 text-white/40 text-sm">
+                  {t.noBudgetsThisMonth || 'В этом месяце пока нет бюджетов.'}<br />
+                  {t.addFirstCategoryHint || 'Добавь первую категорию ниже.'}
+                </div>
+              )}
+              {rows.map((row) => (
+                <BudgetRow
+                  key={row.id || `unbudgeted-${row.category}`}
+                  row={row}
+                  onEdit={setEditing}
+                  onDelete={handleDelete}
+                  t={t}
+                />
+              ))}
+            </div>
 
-        {/* ── Add new category ── */}
-        {!loading && (
-          <AddCategoryForm
-            existingCategories={existingCategories}
-            onAdd={save}
-          />
+            {/* ── Add new category ── */}
+            <AddCategoryForm
+              existingCategories={existingCategories}
+              onAdd={save}
+              t={t}
+            />
+          </>
         )}
 
         {/* ── Edit modal ── */}
@@ -512,6 +516,7 @@ export default function BudgetView({ userId, profileType = 'business' }) {
             row={editing}
             onClose={() => setEditing(null)}
             onSave={save}
+            t={t}
           />
         )}
 
@@ -523,10 +528,11 @@ export default function BudgetView({ userId, profileType = 'business' }) {
             knownCategories={existingCategories}
             onClose={() => setShowAIProposal(false)}
             onApplied={(count) => {
-              setAppliedToast(`Применено ${count} ${count === 1 ? 'категория' : 'категорий'}`)
+              setAppliedToast(`${t.rolloverApplied || 'Применено'} ${count} ${count === 1 ? (t.categoriesLabel?.one || 'категория') : (t.categoriesLabel?.other || 'категорий')}`)
               setTimeout(() => setAppliedToast(null), 4000)
               if (typeof live?.reload === 'function') live.reload()
             }}
+            t={t}
           />
         )}
 
@@ -542,7 +548,7 @@ export default function BudgetView({ userId, profileType = 'business' }) {
 }
 
 // ─── AI Budget Proposal Modal ────────────────────────────────────────────────
-function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onApplied }) {
+function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onApplied, t }) {
   const [step, setStep] = useState('loading') // 'loading' | 'review' | 'applying' | 'error'
   const [proposal, setProposal] = useState(null)
   const [error, setError] = useState('')
@@ -586,7 +592,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
         note: it.note,
       }))
     if (items.length === 0) {
-      setError('Выберите хотя бы одну категорию')
+      setError(t.errSelectAtLeastOne || 'Выберите хотя бы одну категорию')
       return
     }
     setStep('applying')
@@ -614,9 +620,9 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
           <div>
-            <h3 className="text-white font-semibold text-sm">✦ AI-генератор бюджета</h3>
+            <h3 className="text-white font-semibold text-sm">✦ {t.aiBudget || 'AI-бюджет'}</h3>
             <p className="text-white/40 text-xs mt-0.5">
-              На основе истории расходов за последние 3 месяца
+              {t.aiInsightsSub || 'На основе истории расходов за последние 3 месяца'}
             </p>
           </div>
           <button
@@ -632,14 +638,14 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
           {step === 'loading' && (
             <div className="text-center py-12">
               <div className="w-8 h-8 border-2 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-white/60 text-sm">Анализирую вашу историю расходов…</p>
-              <p className="text-white/30 text-xs mt-1">Это займёт ~10 секунд</p>
+              <p className="text-white/60 text-sm">{t.aiAnalyzing || 'Анализирую вашу историю расходов…'}</p>
+              <p className="text-white/30 text-xs mt-1">{t.aiWait || 'Это займёт ~10 секунд'}</p>
             </div>
           )}
 
           {step === 'error' && (
             <div className="text-center py-10">
-              <p className="text-red-400 text-sm font-semibold mb-2">Не удалось сгенерировать бюджет</p>
+              <p className="text-red-400 text-sm font-semibold mb-2">{t.aiError || 'Не удалось сгенерировать бюджет'}</p>
               <p className="text-white/50 text-xs">{error}</p>
             </div>
           )}
@@ -648,12 +654,12 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
             <div>
               {proposal.fromFallback && (
                 <div className="bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-lg px-3 py-2 text-xs mb-3">
-                  AI вернул некорректный ответ — использовано усреднение по истории.
+                  {t.aiFallback || 'AI вернул некорректный ответ — использовано усреднение по истории.'}
                 </div>
               )}
               <p className="text-white/50 text-xs mb-3">
-                Анализ по месяцам: {proposal.monthsAnalyzed.join(', ')}.<br/>
-                Снимите галочки с тех категорий, которые не хотите включать.
+                {t.aiAnalysisMonths || 'Анализ по месяцам'}: {proposal.monthsAnalyzed.join(', ')}.<br/>
+                {t.aiCheckboxHint || 'Снимите галочки с тех категорий, которые не хотите включать.'}
               </p>
               <div className="space-y-1.5">
                 {proposal.items.map((item) => {
@@ -678,7 +684,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
                       <div className="flex-1 min-w-0">
                         <p className="text-white/90 text-sm font-medium truncate">{item.category}</p>
                         <p className="text-white/40 text-[11px] mt-0.5 truncate">
-                          {item.note ? `${item.note} · ` : ''}среднее за 3 мес: {Math.round(item.prevAvg).toLocaleString('ru-RU')} ₸
+                          {item.note ? `${item.note} · ` : ''}{t.avg3Months || 'среднее за 3 мес'}: {Math.round(item.prevAvg).toLocaleString('ru-RU')} ₸
                         </p>
                       </div>
                       <input
@@ -702,7 +708,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
           {step === 'applying' && (
             <div className="text-center py-12">
               <div className="w-6 h-6 border-2 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-white/60 text-sm">Применяю бюджет…</p>
+              <p className="text-white/60 text-sm">{t.aiApplying || 'Применяю бюджет…'}</p>
             </div>
           )}
         </div>
@@ -711,7 +717,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
           <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-white/5 flex-shrink-0">
             <p className="text-white/60 text-xs">
               {step === 'review' && proposal && (
-                <>Выбрано: {selected.size} из {proposal.items.length} · Сумма: <span className="text-white font-semibold">{Math.round(totalSelected).toLocaleString('ru-RU')} ₸</span></>
+                <>{t.selected || 'Выбрано'}: {selected.size} {t.fromLabel || 'из'} {proposal.items.length} · {t.sum || 'Сумма'}: <span className="text-white font-semibold">{Math.round(totalSelected).toLocaleString('ru-RU')} ₸</span></>
               )}
             </p>
             <div className="flex items-center gap-2">
@@ -719,7 +725,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
                 onClick={onClose}
                 className="text-white/50 hover:text-white text-sm px-3 py-2"
               >
-                Отмена
+                {t.cancel || 'Отмена'}
               </button>
               {step === 'review' && (
                 <button
@@ -727,7 +733,7 @@ function AIProposalModal({ userId, targetMonth, knownCategories, onClose, onAppl
                   disabled={selected.size === 0}
                   className="bg-mint hover:bg-mint/90 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-colors"
                 >
-                  Применить ({selected.size})
+                  {t.apply || 'Применить'} ({selected.size})
                 </button>
               )}
             </div>

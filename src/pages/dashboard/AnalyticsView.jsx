@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import { getPlannedOperations } from '../../lib/plannedOperations'
@@ -47,17 +47,19 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const fmtMoney = (value) => `${Math.round(Math.abs(value || 0)).toLocaleString('ru-RU')} ₸`
 
-function CashflowForecastCard({ forecast, profileType = 'business' }) {
+function CashflowForecastCard({ forecast, profileType = 'business', t }) {
   if (!forecast) return null
   const isPersonal = profileType === 'personal'
   const risk = forecast.riskLevel
   const isCritical = risk === 'critical'
   const isWarning = risk === 'warning'
+  
   const statusLabel = isCritical
-    ? (isPersonal ? 'Риск нехватки денег' : 'Риск кассового разрыва')
+    ? (isPersonal ? (t.riskLowMoney || 'Риск нехватки денег') : (t.riskGap || 'Риск кассового разрыва'))
     : isWarning
-      ? 'Низкий запас ликвидности'
-      : 'Запас ликвидности в норме'
+      ? (t.riskLowLiquidity || 'Низкий запас ликвидности')
+      : (t.riskNormalLiquidity || 'Запас ликвидности в норме')
+
   const statusClass = isCritical
     ? 'bg-red-500/10 text-red-300 border-red-500/20'
     : isWarning
@@ -78,23 +80,25 @@ function CashflowForecastCard({ forecast, profileType = 'business' }) {
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-white">{isPersonal ? 'Личный прогноз на 60 дней' : 'Прогноз Cash Flow на 60 дней'}</h3>
+            <h3 className="text-sm font-semibold text-white">
+              {isPersonal ? (t.forecastPersonalTitle || 'Личный прогноз на 60 дней') : (t.forecastBizTitle || 'Прогноз Cash Flow на 60 дней')}
+            </h3>
             <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusClass}`}>
               {statusLabel}
             </span>
           </div>
           <p className="max-w-2xl text-xs leading-relaxed text-white/45">
             {isPersonal
-              ? 'Считает будущий баланс с учетом текущих счетов, регулярных платежей и финансовых целей.'
-              : 'Считает будущий баланс с учетом текущих счетов, ожидаемых инвойсов, ФОТ и резервов по бизнес-целям.'}
+              ? (t.forecastPersonalDesc || 'Считает будущий баланс с учетом текущих счетов, регулярных платежей и финансовых целей.')
+              : (t.forecastBizDesc || 'Считает будущий баланс с учетом текущих счетов, ожидаемых инвойсов, ФОТ и резервов по бизнес-целям.')}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            ['Баланс сейчас', fmtMoney(forecast.openingBalance), 'text-[#4F8EF7]'],
-            ['План доходов', `+${fmtMoney(forecast.totalIncome)}`, 'text-mint'],
-            ['План расходов', `−${fmtMoney(forecast.totalExpense)}`, 'text-red-300'],
-            ['Мин. остаток', fmtMoney(forecast.minBalance), forecast.minBalance < 0 ? 'text-red-300' : 'text-amber-300'],
+            [t.balanceNow || 'Баланс сейчас', fmtMoney(forecast.openingBalance), 'text-[#4F8EF7]'],
+            [t.incomePlan || 'План доходов', `+${fmtMoney(forecast.totalIncome)}`, 'text-mint'],
+            [t.expensePlan || 'План расходов', `−${fmtMoney(forecast.totalExpense)}`, 'text-red-300'],
+            [t.minBalance || 'Мин. остаток', fmtMoney(forecast.minBalance), forecast.minBalance < 0 ? 'text-red-300' : 'text-amber-300'],
           ].map(([label, value, color]) => (
             <div key={label} className="rounded-lg border border-white/5 bg-black/10 px-3 py-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{label}</p>
@@ -121,7 +125,7 @@ function CashflowForecastCard({ forecast, profileType = 'business' }) {
         </svg>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/35">
           <span>{forecast.from}</span>
-          <span>Минимум: {forecast.minDate}</span>
+          <span>{t.minimum || 'Минимум'}: {forecast.minDate}</span>
           <span>{forecast.to}</span>
         </div>
       </div>
@@ -130,9 +134,9 @@ function CashflowForecastCard({ forecast, profileType = 'business' }) {
 }
 
 export default function AnalyticsView({ userId, refreshKey, accounts = [], profileType = 'business' }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const isPersonal = profileType === 'personal'
-  const netLabel = isPersonal ? 'Остаток' : t.netProfit
+  const netLabel = isPersonal ? (t.netLabelPersonal || 'Остаток') : (t.netLabelBiz || t.netProfit)
   const [period, setPeriod] = useState('6m')
   const [includePlanned, setIncludePlanned] = useState(true)
   const [plannedAvailable, setPlannedAvailable] = useState(false)
@@ -230,7 +234,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
     // Category breakdown (expenses)
     const catMap = {}
     analyticsData.filter(tx => tx.type === 'expense').forEach(tx => {
-      const cat = tx.planned ? `${tx.category || 'Зарплата'} (план)` : (tx.category || '—')
+      const cat = tx.planned ? `${tx.category || (t.salaryLabel || 'Зарплата')} ${t.planSuffix || '(план)'}` : (tx.category || '—')
       catMap[cat] = (catMap[cat] || 0) + Math.abs(tx.amount || 0)
     })
     const catArr = Object.entries(catMap)
@@ -240,7 +244,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
     setCategoryData(catArr)
 
     setLoading(false)
-  }, [userId, period, refreshKey, includePlanned, plannedRefreshKey, accounts])
+  }, [userId, period, refreshKey, includePlanned, plannedRefreshKey, accounts, t])
 
   useEffect(() => {
     fetchAnalytics()
@@ -253,7 +257,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
       <div className="px-4 sm:px-6 py-4">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h2 className="text-white/80 text-sm font-semibold">{isPersonal ? 'Личный денежный поток' : t.cashFlow}</h2>
+          <h2 className="text-white/80 text-sm font-semibold">{isPersonal ? (t.personalCashFlow || 'Личный денежный поток') : (t.bizCashFlow || t.cashFlow)}</h2>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
             {plannedAvailable && (
               <button
@@ -264,7 +268,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
                     : 'bg-white/5 border-white/10 text-white/35 hover:text-white/60'
                 }`}
               >
-                План
+                {t.planBtn || 'План'}
               </button>
             )}
             <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
@@ -294,7 +298,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
               <p className="text-white/40 text-xs mb-2">{card.label}</p>
               <p className={`text-2xl font-black ${card.color}`}>
                 {card.value >= 0 ? '' : '−'}
-                {Math.abs(card.value).toLocaleString('en', { maximumFractionDigits: 0 })}
+                {Math.abs(card.value).toLocaleString(lang, { maximumFractionDigits: 0 })}
               </p>
             </div>
           ))}
@@ -306,7 +310,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
           </div>
         ) : (
           <>
-            <CashflowForecastCard forecast={forecast} profileType={profileType} />
+            <CashflowForecastCard forecast={forecast} profileType={profileType} t={t} />
 
             {/* Bar chart: Income vs Expenses */}
             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5 mb-4">
@@ -340,7 +344,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
 
             {/* Line chart: Profit trend */}
             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5 mb-4">
-              <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{isPersonal ? 'Динамика остатка' : t.profitTrend}</p>
+              <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">{isPersonal ? (t.remTrend || 'Динамика остатка') : (t.profitTrend || 'Динамика прибыли')}</p>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -380,7 +384,7 @@ export default function AnalyticsView({ userId, refreshKey, accounts = [], profi
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-white/60 text-xs">{cat.name}</span>
                         <span className="text-white/60 text-xs font-medium">
-                          {cat.value.toLocaleString('en', { maximumFractionDigits: 0 })}
+                          {cat.value.toLocaleString(lang, { maximumFractionDigits: 0 })}
                         </span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">

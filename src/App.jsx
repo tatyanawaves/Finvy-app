@@ -1,6 +1,6 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { LanguageProvider } from './context/LanguageContext'
+import { LanguageProvider, useLanguage } from './context/LanguageContext'
 
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
@@ -21,6 +21,7 @@ const presentationFile = '/Finvy - AI Finance.pptx'
 
 function LandingPage() {
   const { user } = useAuth()
+  const { lang } = useLanguage()
   const [authModal, setAuthModal] = useState(null)
   const [selectedPlan, setSelectedPlan] = useState('business')
   const [selectedPeriod, setSelectedPeriod] = useState('half')
@@ -44,7 +45,7 @@ function LandingPage() {
       <HowItWorks onOpenModal={startProduct} />
       <ForBusiness onOpenModal={startProduct} />
       <Pricing onOpenModal={startProduct} />
-      <CashbackTeaser onOpenModal={startProduct} />
+      {lang !== 'en' && <CashbackTeaser onOpenModal={startProduct} />}
       <ContactSection />
       <Footer />
       {authModal && (

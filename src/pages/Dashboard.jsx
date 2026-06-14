@@ -157,19 +157,19 @@ function DashboardInner() {
 
   const base = '/dashboard'
   const allTabs = [
-    { key: 'transactions', label: t.transactions,  path: base },
+    { key: 'transactions', label: t.transactions || 'Транзакции',  path: base },
     { key: 'budget',      label: t.budget || 'Бюджет', path: `${base}/budget` },
-    { key: 'goals',       label: isPersonalProfile ? 'Фин. цели' : (t.goals || 'Цели'), path: `${base}/goals` },
-    { key: 'analytics',   label: t.analytics,     path: `${base}/analytics` },
+    { key: 'goals',       label: isPersonalProfile ? t.goalsTitle || 'Фин. цели' : (t.goals || 'Цели'), path: `${base}/goals` },
+    { key: 'analytics',   label: t.analytics || 'Аналитика',     path: `${base}/analytics` },
     { key: 'ai',          label: `✦ ${t.aiAnalytics || 'AI'}`, path: `${base}/ai` },
-    { key: 'calendar',    label: t.calendar,       path: `${base}/calendar` },
-    { key: 'invoices',    label: t.invoices,       path: `${base}/invoices`, businessOnly: true },
-    { key: 'reports',     label: t.reports,        path: `${base}/reports` },
+    { key: 'calendar',    label: t.calendar || 'Календарь',       path: `${base}/calendar` },
+    { key: 'invoices',    label: t.invoices || 'Счета',       path: `${base}/invoices`, businessOnly: true },
+    { key: 'reports',     label: t.reports || 'Отчёты',        path: `${base}/reports` },
     { key: 'taxes',       label: t.taxes || 'Налоги', path: `${base}/taxes`, businessOnly: true },
-    { key: 'payroll',     label: 'З/п',               path: `${base}/payroll`, businessOnly: true },
-    { key: 'categories',  label: t.categories,     path: `${base}/categories` },
-    { key: 'users',       label: t.users,          path: `${base}/users`, businessOnly: true },
-    { key: 'settings',    label: t.settings,       path: `${base}/settings` },
+    { key: 'payroll',     label: t.payroll || 'З/п',               path: `${base}/payroll`, businessOnly: true },
+    { key: 'categories',  label: t.categories || 'Категории',     path: `${base}/categories` },
+    { key: 'users',       label: t.users || 'Пользователи',          path: `${base}/users`, businessOnly: true },
+    { key: 'settings',    label: t.settings || 'Настройки',       path: `${base}/settings` },
   ]
   const tabs = allTabs.filter(tab => !isPersonalProfile || !tab.businessOnly)
 
@@ -201,15 +201,15 @@ function DashboardInner() {
         transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Logo */}
-        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        {/* Logo & Profile Type */}
+        <div className="px-5 py-5 border-b border-white/5 flex items-center gap-3">
           <BrandLogo textClassName="text-white text-base" />
           <div
-            className="text-white/55 text-xs border border-white/10 rounded-lg px-2 py-1 flex items-center gap-1"
-            title="Тип профиля выбирается один раз в первом опроснике"
+            className="text-white/40 text-[9px] uppercase tracking-widest font-black border border-white/10 rounded-md px-2 py-0.5 flex items-center gap-1.5"
+            title={t.profileTypeDesc}
           >
             <span>{isPersonalProfile ? '👤' : '🏢'}</span>
-            <span>{isPersonalProfile ? (t.personal || 'Физ. лицо') : t.business}</span>
+            <span className="leading-none">{isPersonalProfile ? (t.personal || 'Personal') : (t.business || 'Business')}</span>
           </div>
         </div>
 
@@ -351,12 +351,12 @@ function DashboardInner() {
             <Route path="categories" element={<CategoriesView userId={user.id} profileType={profileType} />} />
             <Route path="reports" element={<ReportsView userId={user.id} currency={defaultCurrency} profileType={profileType} />} />
             <Route path="taxes" element={
-              <ToolPage title={t.taxes || 'Налоги'} subtitle={t.taxesSubtitle || 'Расчёт налогов и ближайшие сроки сдачи'}>
+              <ToolPage title={t.taxes || 'Налоги'} subtitle={t.taxesSubtitle}>
                 <TaxWidget userId={user.id} currency={defaultCurrency} />
               </ToolPage>
             } />
             <Route path="payroll" element={
-              <ToolPage title={t.payroll || 'Зарплата'} subtitle={t.payrollSubtitle || 'Калькулятор начислений, удержаний и полной стоимости сотрудника'}>
+              <ToolPage title={t.payroll || 'Зарплата'} subtitle={t.payrollSubtitle}>
                 <PayrollCalculator userId={user.id} currency={defaultCurrency} onPlannedChange={() => setRefreshKey(k => k + 1)} />
               </ToolPage>
             } />

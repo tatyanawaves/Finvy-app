@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import LocalizedDatePicker from '../../components/LocalizedDatePicker'
+
 import { fetchCategorySpent, fetchBudgetRow, currentMonthKey } from '../../hooks/useBudget'
 
 const CATEGORIES_I18N = {
@@ -324,19 +326,19 @@ export default function AddTransactionModal({ type: initialType, userId, account
                 >
                   {budgetHint.noBudget ? (
                     <span>
-                      Бюджет на «{category}» не задан в этом месяце. Уже потрачено: {Math.round(budgetHint.spent).toLocaleString('ru-RU')} ₸.
+                      {t.budgetNotSet || 'Бюджет на эту категорию не задан в этом месяце. Уже потрачено:'} {Math.round(budgetHint.spent).toLocaleString('ru-RU')} ₸.
                     </span>
                   ) : budgetHint.willOverflow ? (
                     <span>
-                      <span className="font-semibold">⚠ Превысит лимит</span> на {Math.round(Math.abs(budgetHint.after)).toLocaleString('ru-RU')} ₸.
-                      Сейчас осталось: {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ из {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸.
+                      <span className="font-semibold">⚠ {t.willExceedLimit || 'Превысит лимит'}</span> {t.fromTotalOf || 'на'} {Math.round(Math.abs(budgetHint.after)).toLocaleString('ru-RU')} ₸.
+                      {t.currentlyRemaining || 'Сейчас осталось:'} {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ {t.fromTotalOf || 'из'} {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸.
                     </span>
                   ) : (
                     <span>
-                      <span className="font-semibold">Осталось в категории:</span>{' '}
-                      {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ из {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸
+                      <span className="font-semibold">{t.remainingInCat || 'Осталось в категории:'}</span>{' '}
+                      {Math.round(budgetHint.remaining).toLocaleString('ru-RU')} ₸ {t.fromTotalOf || 'из'} {Math.round(budgetHint.cap).toLocaleString('ru-RU')} ₸
                       {Number(amount) > 0 && (
-                        <span className="text-white/55"> → после операции: {Math.round(budgetHint.after).toLocaleString('ru-RU')} ₸</span>
+                        <span className="text-white/55"> → {t.afterOperation || 'после операции'}: {Math.round(budgetHint.after).toLocaleString('ru-RU')} ₸</span>
                       )}
                     </span>
                   )}
@@ -349,11 +351,10 @@ export default function AddTransactionModal({ type: initialType, userId, account
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-white/40 text-xs mb-1.5 block">{t.date}</label>
-              <input
-                type="date"
+              <LocalizedDatePicker
                 value={date}
-                onChange={e => setDate(e.target.value)}
-                className={`${inputClass} [color-scheme:dark]`}
+                onChange={setDate}
+                placeholder={t.date}
               />
             </div>
             <div>

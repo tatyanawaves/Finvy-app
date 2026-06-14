@@ -52,7 +52,7 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
   const { t, lang } = useLanguage()
   const sym = symOf(currency)
   const isPersonal = profileType === 'personal'
-  const netLabel = isPersonal ? 'Остаток' : t.profit
+  const netLabel = isPersonal ? (t.netLabelPersonal || 'Остаток') : (t.netLabelBiz || t.profit)
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('all')
@@ -116,18 +116,18 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
       <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-6 py-3 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none">
         <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{t.income}</p>
-          <p className="text-mint font-bold text-sm">{sym}+{summary.income.toLocaleString('en', { maximumFractionDigits: 0 })}</p>
+          <p className="text-mint font-bold text-sm">{sym}+{summary.income.toLocaleString(lang, { maximumFractionDigits: 0 })}</p>
         </div>
         <div className="hidden sm:block w-px h-8 bg-white/5" />
         <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{t.expense}</p>
-          <p className="text-red-400 font-bold text-sm">{sym}−{summary.expense.toLocaleString('en', { maximumFractionDigits: 0 })}</p>
+          <p className="text-red-400 font-bold text-sm">{sym}−{summary.expense.toLocaleString(lang, { maximumFractionDigits: 0 })}</p>
         </div>
         <div className="hidden sm:block w-px h-8 bg-white/5" />
         <div className="min-w-[88px]">
           <p className="text-white/30 text-xs mb-0.5">{netLabel}</p>
           <p className={`font-bold text-sm ${summary.profit >= 0 ? 'text-mint' : 'text-red-400'}`}>
-            {sym}{summary.profit >= 0 ? '+' : '−'}{Math.abs(summary.profit).toLocaleString('en', { maximumFractionDigits: 0 })}
+            {sym}{summary.profit >= 0 ? '+' : '−'}{Math.abs(summary.profit).toLocaleString(lang, { maximumFractionDigits: 0 })}
           </p>
         </div>
 
@@ -230,7 +230,8 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
                   <p className="hidden sm:block text-white/30 text-xs self-center">{formatDate(tx.date, lang)}</p>
                   {/* Amount */}
                   <p className={`mt-2 sm:mt-0 text-xs font-bold self-center sm:text-right ${typeColor[tx.type] || 'text-white/50'}`}>
-                    {formatAmount(tx.amount, tx.type)}
+                    {tx.type === 'expense' ? '−' : tx.type === 'income' ? '+' : ''}
+                    {Math.abs(tx.amount || 0).toLocaleString(lang, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                   </p>
                 </div>
               ))}

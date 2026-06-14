@@ -9,18 +9,11 @@ import {
   CB_CATS,
 } from '../../data/bankCashbacks'
 import { useLiveCashbacks } from '../../hooks/useLiveCashbacks'
+import { useLanguage } from '../../context/LanguageContext'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-const PERIODS = [
-  { key: 'this_month',   label: 'Этот месяц' },
-  { key: 'last_month',   label: 'Прошлый месяц' },
-  { key: 'this_quarter', label: 'Квартал' },
-  { key: 'this_year',    label: 'Этот год' },
-  { key: 'custom',       label: 'Произвольный' },
-]
-
 function getPeriodDates(key) {
   const now = new Date()
   const y = now.getFullYear(), m = now.getMonth()
@@ -32,7 +25,6 @@ function getPeriodDates(key) {
 }
 
 const fmt = (n) => Math.round(n).toLocaleString('ru-RU')
-const fmtK = (n) => n >= 1000 ? `${(n/1000).toFixed(0)}к` : `${Math.round(n)}`
 const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-zа-я0-9]+/gi, '')
 
 function parseSurveyData(value) {
@@ -56,7 +48,7 @@ const dateKey = (value) => {
   return String(value).slice(0, 10)
 }
 
-function buildSpendingMapFromTransactions(transactions = [], dates) {
+function buildSpendingMapFromTransactions(transactions = [], dates, t) {
   const from = dates ? dateKey(dates.from) : ''
   const to = dates ? dateKey(dates.to) : ''
   const map = {}
@@ -70,7 +62,7 @@ function buildSpendingMapFromTransactions(transactions = [], dates) {
       return txDate >= from && txDate <= to
     })
     .forEach(tx => {
-      const cat = tx.category || 'Прочее'
+      const cat = tx.category || (t.other || 'Прочее')
       if (!map[cat]) map[cat] = { expense: 0 }
       map[cat].expense += Math.abs(Number(tx.amount) || 0)
     })
@@ -100,8 +92,8 @@ function isCashbackEligible(category = '', description = '') {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step indicator
 // ─────────────────────────────────────────────────────────────────────────────
-function StepIndicator({ step, onGoTo }) {
-  const steps = ['Период', 'Расходы', 'Рекомендации']
+function StepIndicator({ step, onGoTo, t }) {
+  const steps = [t.stepPeriod || 'Period', t.stepExpenses || 'Expenses', t.stepRecommendations || 'Recommendations']
   return (
     <div className="flex items-center gap-1 mb-5">
       {steps.map((label, i) => (
@@ -134,30 +126,38 @@ function StepIndicator({ step, onGoTo }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 0 — Period picker
 // ─────────────────────────────────────────────────────────────────────────────
-function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, onNext, loading, isAdult, setIsAdult, banks, source, updatedAt }) {
+function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, onNext, loading, isAdult, setIsAdult, banks, source, updatedAt, t, lang }) {
   const canProceed = period !== 'custom' || (customFrom && customTo)
   const totalCards = banks.reduce((s, b) => s + b.cards.length, 0)
+  
+  const PERIODS = [
+    { key: 'this_month',   label: t.thisMonth },
+    { key: 'last_month',   label: t.lastMonth },
+    { key: 'this_quarter', label: t.thisQuarter },
+    { key: 'this_year',    label: t.thisYear },
+    { key: 'custom',       label: t.custom },
+  ]
 
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-white font-bold text-base">Анализ кэшбэков</h3>
+        <h3 className="text-white font-bold text-base">{t.cashbackAnalysis}</h3>
         <p className="text-white/40 text-sm mt-1">
-          Выберите период — мы сравним ваши траты с условиями {banks.length} банков ({totalCards} карт) и найдём лучший кэшбэк
+          {(t.selectPeriodCompareBanks || 'Выберите период — мы сравним ваши траты с условиями {n} банков и найдём лучший кэшбэк').replace('{n}', banks.length)}
         </p>
         <div className="flex items-center gap-2 mt-2">
           {source === 'live' ? (
             <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" /> AI · ежедневное обновление
+              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" /> {t.liveUpdate || 'AI · ежедневное обновление'}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/10">
-              Локальная база
+              {t.localDatabase || 'Локальная база'}
             </span>
           )}
           {updatedAt && (
             <span className="text-white/25 text-[9px]">
-              обновлено {new Date(updatedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })}
+              {t.updated || 'обновлено'} {new Date(updatedAt).toLocaleDateString(lang, { day: '2-digit', month: 'short' })}
             </span>
           )}
         </div>
@@ -173,7 +173,7 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
               : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.07] border border-white/[0.06]'
           }`}
         >
-          <span>👤</span> 18+
+          <span>👤</span> {t.adult18 || '18+'}
         </button>
         <button
           onClick={() => setIsAdult(false)}
@@ -183,7 +183,7 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
               : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.07] border border-white/[0.06]'
           }`}
         >
-          <span>🎓</span> 14–17 лет
+          <span>🎓</span> {t.student1417 || '14–17 лет'}
         </button>
       </div>
 
@@ -212,14 +212,14 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
 
       {/* Bank grid */}
       <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 mb-5">
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3">Анализируем карты</p>
+        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3">{t.analyzeCards || 'Анализируем карты'}</p>
         <div className="grid grid-cols-2 gap-2">
           {banks.map(b => (
             <div key={b.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.03]">
               <span className="text-base">{b.logo}</span>
               <div className="min-w-0">
-                <p className="text-white/70 text-xs font-medium truncate">{b.nameRu}</p>
-                <p className="text-white/25 text-[10px]">{b.cards.length} {b.cards.length === 1 ? 'карта' : 'карты'}</p>
+                <p className="text-white/70 text-xs font-medium truncate">{lang === 'en' ? b.name : b.nameRu}</p>
+                <p className="text-white/25 text-[10px]">{b.cards.length} {t.moreCards || 'карт'}</p>
               </div>
             </div>
           ))}
@@ -229,8 +229,8 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
       <button onClick={onNext} disabled={!canProceed || loading}
         className="w-full py-3.5 rounded-xl bg-mint text-dark font-bold text-sm hover:bg-mint/90 active:scale-[0.99] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
         {loading ? (
-          <><div className="w-4 h-4 border-2 border-dark/30 border-t-dark rounded-full animate-spin" /> Анализируем транзакции...</>
-        ) : <><span>✦</span> Сгенерировать отчёт</>}
+          <><div className="w-4 h-4 border-2 border-dark/30 border-t-dark rounded-full animate-spin" /> {t.analyzingTransactions || 'Анализируем транзакции...'}</>
+        ) : <><span>✦</span> {t.generatingReport || 'Сгенерировать отчёт'}</>}
       </button>
     </div>
   )
@@ -239,7 +239,7 @@ function StepPeriod({ period, setPeriod, customFrom, setCustomFrom, customTo, se
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 1 — Spending breakdown
 // ─────────────────────────────────────────────────────────────────────────────
-function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, banks }) {
+function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, banks, t, lang }) {
   const topCategories = Object.entries(spendingMap)
     .filter(([, v]) => v.expense > 0)
     .sort((a, b) => b[1].expense - a[1].expense)
@@ -249,18 +249,18 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, 
   return (
     <div>
       <div className="mb-4">
-        <h3 className="text-white font-bold text-base">Ваши расходы</h3>
+        <h3 className="text-white font-bold text-base">{t.yourExpenses || 'Ваши расходы'}</h3>
         <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-2xl font-black text-white">{fmt(totalExpense)} ₸</span>
-          <span className="text-white/30 text-sm">за {periodLabel?.toLowerCase()}</span>
+          <span className="text-2xl font-black text-white">{Math.round(totalExpense).toLocaleString(lang)} ₸</span>
+          <span className="text-white/30 text-sm">{t.fromLabel || 'за'} {periodLabel?.toLowerCase()}</span>
         </div>
       </div>
 
       {topCategories.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-36 text-white/20 mb-5">
           <p className="text-4xl mb-2">📭</p>
-          <p className="text-sm">Нет расходов за выбранный период</p>
-          <p className="text-xs mt-1">Добавьте транзакции и попробуйте снова</p>
+          <p className="text-sm">{t.noExpensesPeriod || 'Нет расходов за выбранный период'}</p>
+          <p className="text-xs mt-1">{t.addTxsTryAgain || 'Добавьте транзакции и попробуйте снова'}</p>
         </div>
       ) : (
         <div className="space-y-2 mb-5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
@@ -284,8 +284,8 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, 
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0 ml-2">
-                    <p className="text-white/85 text-sm font-bold">{fmt(amounts.expense)} ₸</p>
-                    <p className="text-white/25 text-[10px]">{pct.toFixed(0)}% от трат</p>
+                    <p className="text-white/85 text-sm font-bold">{Math.round(amounts.expense).toLocaleString(lang)} ₸</p>
+                    <p className="text-white/25 text-[10px]">{pct.toFixed(0)}% {t.fromTotalOf || 'от'} {t.expenseCategories?.toLowerCase() || 'трат'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -295,7 +295,7 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, 
                   {best && (
                     <span className="text-[10px] font-bold flex-shrink-0 px-1.5 py-0.5 rounded-md"
                       style={{ background: best.bank.color + '20', color: best.bank.color }}>
-                      {best.bank.logo} до {best.rule.percent}%
+                      {best.bank.logo} {t.fromLabel || 'до'} {best.rule.percent}%
                     </span>
                   )}
                 </div>
@@ -308,11 +308,11 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, 
       <div className="flex gap-2">
         <button onClick={onBack}
           className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
-          ← Назад
+          ← {t.cancel || 'Назад'}
         </button>
         <button onClick={onNext}
           className="flex-[2] py-3 rounded-xl bg-mint text-dark font-bold text-sm hover:bg-mint/90 transition-colors">
-          Смотреть рекомендации →
+          {t.seeRecommendations || 'Смотреть рекомендации'} →
         </button>
       </div>
     </div>
@@ -322,7 +322,7 @@ function StepAnalysis({ spendingMap, totalExpense, periodLabel, onNext, onBack, 
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 2 — Recommendations
 // ─────────────────────────────────────────────────────────────────────────────
-function StepRecommendations({ recommendations, totalExpense, periodLabel, spendingMap, onBack, isAdult, banks }) {
+function StepRecommendations({ recommendations, totalExpense, periodLabel, spendingMap, onBack, isAdult, banks, t, lang }) {
   const [expandedCard, setExpandedCard] = useState(null)
   const [showAll, setShowAll] = useState(false)
 
@@ -349,7 +349,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
 
     doc.setFontSize(10); doc.setTextColor(60, 60, 60)
     doc.text(`Period: ${periodLabel}`, lm, y); y += 6
-    doc.text(`Total expenses: ${fmt(totalExpense)} KZT`, lm, y); y += 10
+    doc.text(`Total expenses: ${Math.round(totalExpense).toLocaleString(lang)} KZT`, lm, y); y += 10
 
     doc.setFontSize(12); doc.setTextColor(30, 30, 30)
     doc.text('Top Recommendations', lm, y); y += 8
@@ -361,7 +361,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
       doc.setTextColor(30, 30, 30)
       doc.text(`${r.bankName} — ${r.cardName}`, lm + 8, y); y += 5
       doc.setFontSize(9); doc.setTextColor(80, 80, 80)
-      doc.text(`Cashback: ~${fmt(r.netCashback)} KZT/month (${fmt(r.netCashback * 12)} KZT/year)`, lm + 8, y); y += 5
+      doc.text(`Cashback: ~${Math.round(r.netCashback).toLocaleString(lang)} KZT/month (${Math.round(r.netCashback * 12).toLocaleString(lang)} KZT/year)`, lm + 8, y); y += 5
       doc.text(r.highlight || '', lm + 8, y); y += 7
     })
 
@@ -374,7 +374,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
       if (y > 270) { doc.addPage(); y = 20 }
       doc.setFontSize(9); doc.setTextColor(60, 60, 60)
       doc.text(cat, lm, y)
-      doc.text(`${fmt(v.expense)} KZT`, lm + 100, y); y += 5
+      doc.text(`${Math.round(v.expense).toLocaleString(lang)} KZT`, lm + 100, y); y += 5
     })
 
     if (winner) {
@@ -384,8 +384,8 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
       doc.setFontSize(10); doc.setTextColor(60, 60, 60)
       doc.text(`Bank: ${winner.bankName}`, lm, y); y += 5
       doc.text(`Card: ${winner.cardName}`, lm, y); y += 5
-      doc.text(`Cashback: ~${fmt(winner.netCashback)} KZT/month`, lm, y); y += 5
-      doc.text(`Annual benefit: ~${fmt(winner.netCashback * 12)} KZT`, lm, y); y += 5
+      doc.text(`Cashback: ~${Math.round(winner.netCashback).toLocaleString(lang)} KZT/month`, lm, y); y += 5
+      doc.text(`Annual benefit: ~${Math.round(winner.netCashback * 12).toLocaleString(lang)} KZT`, lm, y); y += 5
       const bankUrl = banks.find(b => b.id === winner.bankId)?.url
       if (bankUrl) { doc.text(`Website: ${bankUrl}`, lm, y); y += 5 }
     }
@@ -409,7 +409,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
           {/* #1 badge */}
           <div className="absolute -top-0.5 right-3 flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-b-lg"
             style={{ background: winner.bankColor + '30', color: winner.bankColor }}>
-            🏆 #1 лучший выбор
+            🏆 #1 {t.bestChoice || 'лучший выбор'}
           </div>
 
           <div className="flex items-start gap-3">
@@ -423,21 +423,21 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                 <span className="text-white/40 text-sm">{winner.cardName}</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full"
                   style={{ background: winner.bankColor + '20', color: winner.bankColor }}>
-                  {winner.cardType === 'debit' ? 'Дебетовая' : 'Кредитная'}
+                  {winner.cardType === 'debit' ? (t.debit || 'Дебетовая') : (t.credit || 'Кредитная')}
                 </span>
               </div>
               <p className="text-white/45 text-xs mb-2">{winner.highlight}</p>
               <div className="flex items-end gap-3">
                 <div>
-                  <p className="text-[10px] text-white/30 mb-0.5">в месяц</p>
+                  <p className="text-[10px] text-white/30 mb-0.5">{t.perMonth || 'в месяц'}</p>
                   <p className="text-2xl font-black" style={{ color: winner.bankColor }}>
-                    +{fmt(winner.netCashback)} ₸
+                    +{Math.round(winner.netCashback).toLocaleString(lang)} ₸
                   </p>
                 </div>
                 <div className="pb-0.5">
-                  <p className="text-[10px] text-white/25 mb-0.5">в год</p>
+                  <p className="text-[10px] text-white/25 mb-0.5">{t.perYear || 'в год'}</p>
                   <p className="text-sm font-bold text-white/50">
-                    +{fmt(winner.netCashback * 12)} ₸
+                    +{Math.round(winner.netCashback * 12).toLocaleString(lang)} ₸
                   </p>
                 </div>
               </div>
@@ -455,8 +455,8 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
       ) : (
         <div className="text-center py-8 text-white/20 mb-4">
           <p className="text-4xl mb-2">📭</p>
-          <p className="text-sm">Нет данных для рекомендации</p>
-          <p className="text-xs mt-1">Добавьте расходы по категориям</p>
+          <p className="text-sm">{t.noDataRecommendation || 'Нет данных для рекомендации'}</p>
+          <p className="text-xs mt-1">{t.addFirstCategoryHint || 'Добавьте расходы по категориям'}</p>
         </div>
       )}
 
@@ -466,11 +466,11 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
           <div className="flex items-start gap-2">
             <span className="text-base flex-shrink-0">ℹ️</span>
             <div>
-              <p className="text-[#4F8EF7] text-xs font-semibold mb-1">Почему не Freedom Student?</p>
+              <p className="text-[#4F8EF7] text-xs font-semibold mb-1">{t.whyNotFreedomStudent || 'Почему не Freedom Student?'}</p>
               <p className="text-white/45 text-[11px] leading-relaxed">
-                Freedom Student (до 37% кэшбэк) доступна только для подростков <span className="text-white/70 font-medium">14–17 лет</span>.
-                {' '}Для вас <span className="text-white/70 font-medium">{winner.bankName} {winner.cardName}</span> — лучший выбор
-                с кэшбэком <span className="font-bold" style={{ color: winner.bankColor }}>~{fmt(winner.netCashback)} ₸/мес</span> вместо ~118 970 ₸/мес у Student-карты.
+                {(t.freedomStudentDesc || 'Freedom Student (до 37% кэшбэк) доступна только для подростков 14–17 лет. Для вас {bank} {card} — лучший выбор.')
+                  .replace('{bank}', winner.bankName)
+                  .replace('{card}', winner.cardName)}
               </p>
             </div>
           </div>
@@ -504,14 +504,14 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-white/80 text-sm font-semibold">{card.bankName}</span>
                     <span className="text-white/35 text-xs">{card.cardName}</span>
-                    {idx === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-mint/15 text-mint font-bold">лучший</span>}
+                    {idx === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-mint/15 text-mint font-bold">{t.best || 'лучший'}</span>}
                   </div>
                   <p className="text-white/30 text-[10px] truncate mt-0.5">{card.highlight}</p>
                 </div>
                 {/* Amount */}
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-black" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸</p>
-                  <p className="text-white/20 text-[10px]">/мес</p>
+                  <p className="text-sm font-black" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸</p>
+                  <p className="text-white/20 text-[10px]">/{t.month || 'мес'}</p>
                 </div>
                 {/* Arrow */}
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -536,7 +536,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                   {/* Breakdown by category */}
                   {card.breakdown.length > 0 ? (
                     <>
-                      <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider mb-1.5">Кэшбэк по вашим категориям</p>
+                      <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider mb-1.5">{t.cashbackAnalysis || 'Кэшбэк по вашим категориям'}</p>
                       {card.breakdown.map((b, i) => {
                         const emoji = CB_CAT_LABELS_RU[b.cbKey]?.split(' ')[0] || '💳'
                         const catLabel = CB_CAT_LABELS_RU[b.cbKey]?.split(' ').slice(1).join(' ') || b.cbKey
@@ -546,28 +546,28 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                               <span className="text-sm">{emoji}</span>
                               <div>
                                 <span className="text-white/55 text-xs">{catLabel}</span>
-                                <span className="text-white/20 text-[10px] ml-1.5">{fmt(b.spend)} ₸ потрачено</span>
+                                <span className="text-white/20 text-[10px] ml-1.5">{Math.round(b.spend).toLocaleString(lang)} ₸ {t.reportExpense || 'потрачено'}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-white/25 text-[10px]">{b.percent}%</span>
-                              <span className="text-xs font-bold" style={{ color: card.bankColor }}>+{fmt(b.cashback)} ₸</span>
+                              <span className="text-xs font-bold" style={{ color: card.bankColor }}>+{Math.round(b.cashback).toLocaleString(lang)} ₸</span>
                             </div>
                           </div>
                         )
                       })}
                       <div className="flex items-center justify-between pt-1.5 border-t mt-1"
                         style={{ borderColor: card.bankColor + '20' }}>
-                        <span className="text-white/35 text-xs font-semibold">Итого в месяц</span>
-                        <span className="font-black text-sm" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸</span>
+                        <span className="text-white/35 text-xs font-semibold">{t.totalPerMonth || 'Итого в месяц'}</span>
+                        <span className="font-black text-sm" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-white/25 text-xs">Выгода за год</span>
-                        <span className="text-white/50 text-xs font-semibold">≈ {fmt(card.netCashback * 12)} ₸</span>
+                        <span className="text-white/25 text-xs">{t.annualBenefit || 'Выгода за год'}</span>
+                        <span className="text-white/50 text-xs font-semibold">≈ {Math.round(card.netCashback * 12).toLocaleString(lang)} ₸</span>
                       </div>
                     </>
                   ) : (
-                    <p className="text-white/30 text-xs py-2">Кэшбэк на «все покупки»: {fmt(card.netCashback)} ₸/мес</p>
+                    <p className="text-white/30 text-xs py-2">{t.cashbackAnalysis || 'Кэшбэк'} {t.allTime?.toLowerCase() || 'на все покупки'}: {Math.round(card.netCashback).toLocaleString(lang)} ₸/{t.month || 'мес'}</p>
                   )}
 
                   {/* Open bank link */}
@@ -575,7 +575,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                     target="_blank" rel="noopener noreferrer"
                     className="mt-2 flex items-center justify-center gap-1.5 w-full py-2 rounded-lg border text-xs font-semibold transition-colors hover:text-white"
                     style={{ borderColor: card.bankColor + '35', color: card.bankColor }}>
-                    Открыть карту на сайте банка
+                    {t.openBankWebsite || 'Открыть карту на сайте банка'}
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M4 1h5v5M9 1L5 5M1 5h2v4H1V5z" strokeLinejoin="round"/>
                     </svg>
@@ -596,7 +596,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
               className={`transition-transform ${showAll ? 'rotate-180' : ''}`}>
               <path d="M2 3l3 3 3-3"/>
             </svg>
-            {showAll ? 'Скрыть' : `Ещё ${rest.length} карт`}
+            {showAll ? (t.hide || 'Скрыть') : `${t.moreCards || 'Ещё'} ${rest.length} ${t.moreCards || 'карт'}`}
           </button>
           {showAll && (
             <div className="space-y-1 mt-1.5">
@@ -607,7 +607,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
                     <span>{card.bankLogo}</span>
                     <span className="text-white/35 text-xs">{card.bankName} · {card.cardName}</span>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸/мес</span>
+                  <span className="text-xs font-semibold" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸/{t.month || 'мес'}</span>
                 </div>
               ))}
             </div>
@@ -621,11 +621,11 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
           <div className="flex items-start gap-2">
             <span className="text-lg">💡</span>
             <div>
-              <p className="text-mint text-xs font-semibold mb-0.5">Персональный совет</p>
+              <p className="text-mint text-xs font-semibold mb-0.5">{t.personalTip || 'Персональный совет'}</p>
               <p className="text-white/45 text-xs leading-relaxed">
                 С картой <span className="text-white/70 font-medium">{winner.bankName} {winner.cardName}</span> вы
-                будете получать примерно <span className="text-mint font-bold">{fmt(winner.netCashback)} ₸</span> кэшбэка
-                в месяц — это <span className="text-white/70 font-semibold">{fmt(winner.netCashback * 12)} ₸ в год</span> на ваших текущих тратах.
+                будете получать примерно <span className="text-mint font-bold">{Math.round(winner.netCashback).toLocaleString(lang)} ₸</span> кэшбэка
+                в месяц — это <span className="text-white/70 font-semibold">{Math.round(winner.netCashback * 12).toLocaleString(lang)} ₸ {t.perYear || 'в год'}</span> на ваших текущих тратах.
               </p>
             </div>
           </div>
@@ -636,14 +636,14 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
       <div className="flex gap-2">
         <button onClick={onBack}
           className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white hover:border-white/20 text-xs font-medium transition-colors">
-          ← Изменить период
+          ← {t.changePeriod || 'Изменить период'}
         </button>
         <button onClick={downloadReport}
           className="flex-[2] py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white/60 hover:bg-white/[0.08] hover:text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M2 9h8M6 1v6M3.5 5l2.5 2.5L9 5"/>
           </svg>
-          Скачать отчёт (PDF)
+          {t.downloadReportPdf || 'Скачать отчёт (PDF)'}
         </button>
       </div>
     </div>
@@ -654,6 +654,7 @@ function StepRecommendations({ recommendations, totalExpense, periodLabel, spend
 // Main modal
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CashbackReportModal({ userId, onClose }) {
+  const { t, lang } = useLanguage()
   const [step, setStep] = useState(0)
   const [period, setPeriod] = useState('this_month')
   const [customFrom, setCustomFrom] = useState('')
@@ -677,6 +678,14 @@ export default function CashbackReportModal({ userId, onClose }) {
     const preferredIds = new Set(preferred.map(bank => bank.id))
     return [...preferred, ...banks.filter(bank => !preferredIds.has(bank.id))]
   }, [banks, selectedBankNames])
+  
+  const PERIODS = [
+    { key: 'this_month',   label: t.thisMonth },
+    { key: 'last_month',   label: t.lastMonth },
+    { key: 'this_quarter', label: t.thisQuarter },
+    { key: 'this_year',    label: t.thisYear },
+    { key: 'custom',       label: t.custom },
+  ]
   const periodLabel = PERIODS.find(p => p.key === period)?.label || ''
 
   useEffect(() => {
@@ -715,13 +724,13 @@ export default function CashbackReportModal({ userId, onClose }) {
       .lte('date', to   + 'T23:59:59')
 
     if (txs?.length) {
-      map = buildSpendingMapFromTransactions(txs, { from, to })
+      map = buildSpendingMapFromTransactions(txs, { from, to }, t)
     }
 
     if (Object.keys(map).length === 0) {
       const planned = await getPlannedOperations({ userId, from, to })
       const onboardingPayments = planned.filter(op => op.type === 'expense' && op.plannedKind === 'obligation')
-      map = buildSpendingMapFromTransactions(onboardingPayments, { from, to })
+      map = buildSpendingMapFromTransactions(onboardingPayments, { from, to }, t)
     }
 
     const total = Object.values(map).reduce((s, v) => s + v.expense, 0)
@@ -744,9 +753,9 @@ export default function CashbackReportModal({ userId, onClose }) {
                 💳
               </div>
               <div>
-                <p className="text-white font-bold text-sm">Кэшбэк-анализ</p>
+                <p className="text-white font-bold text-sm">{t.cashbackAnalysis}</p>
                 <p className="text-white/30 text-xs">
-                  {banks.length} банков · {banks.reduce((s,b) => s+b.cards.length, 0)} карт
+                  {banks.length} {t.moreCards} · {banks.reduce((s,b) => s+b.cards.length, 0)} {t.moreCards}
                   {source === 'live' && version > 0 && (
                     <span className="ml-1 text-emerald-300/70">· v{version}</span>
                   )}
@@ -758,7 +767,7 @@ export default function CashbackReportModal({ userId, onClose }) {
               ✕
             </button>
           </div>
-          <StepIndicator step={step} onGoTo={setStep} />
+          <StepIndicator step={step} onGoTo={setStep} t={t} />
         </div>
 
         {/* Scrollable content */}
@@ -771,6 +780,7 @@ export default function CashbackReportModal({ userId, onClose }) {
               onNext={fetchAndAnalyze} loading={loading}
               isAdult={isAdult} setIsAdult={setIsAdult}
               banks={banksForAnalysis} source={source} updatedAt={updatedAt}
+              t={t} lang={lang}
             />
           )}
           {step === 1 && (
@@ -781,6 +791,7 @@ export default function CashbackReportModal({ userId, onClose }) {
               onNext={() => setStep(2)}
               onBack={() => setStep(0)}
               banks={banksForAnalysis}
+              t={t} lang={lang}
             />
           )}
           {step === 2 && (
@@ -792,6 +803,7 @@ export default function CashbackReportModal({ userId, onClose }) {
               onBack={() => setStep(0)}
               isAdult={isAdult}
               banks={banksForAnalysis}
+              t={t} lang={lang}
             />
           )}
         </div>

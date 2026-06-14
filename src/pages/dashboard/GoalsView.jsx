@@ -6,6 +6,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useLanguage } from '../../context/LanguageContext'
+import LocalizedDatePicker from '../../components/LocalizedDatePicker'
 
 const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
 
@@ -65,76 +67,21 @@ function GoalIcon({ icon, className = 'h-5 w-5' }) {
   )
 }
 
-// ─── Demo data ──────────────────────────────────────────────────────────────
 const DEFAULT_COLORS = ['#4F8EF7', '#A855F7', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#F97316']
-const ICONS = [
-  { key: 'reserve', label: 'Резерв' },
-  { key: 'payroll', label: 'ФОТ' },
-  { key: 'tax', label: 'Налоги' },
-  { key: 'capital', label: 'Капитал' },
-  { key: 'growth', label: 'Рост' },
-  { key: 'automation', label: 'Автоматизация' },
-]
 
-const GOAL_COPY = {
-  business: {
-    title: 'Цели бизнеса',
-    subtitle: 'Планируйте резервы, обязательства и инвестиции в рост компании',
-    newTitle: 'Новая бизнес-цель',
-    editTitle: 'Редактировать бизнес-цель',
-    nameLabel: 'Название бизнес-цели *',
-    nameError: 'Укажите название бизнес-цели',
-    namePlaceholder: 'Например: Резерв на 3 месяца расходов',
-    countLabel: 'Целей бизнеса',
-    savedLabel: 'Зарезервировано',
-    savedInputLabel: 'Уже зарезервировано, ₸',
-    depositPlaceholder: 'Сумма резерва, ₸',
-    targetLabel: 'План',
-    completeCountLabel: 'Закрыто',
-    created: 'Бизнес-цель создана',
-    updated: 'Бизнес-цель обновлена',
-    deleted: 'Бизнес-цель удалена',
-    deleteConfirm: 'Удалить бизнес-цель',
-    emptyTitle: 'Пока нет бизнес-целей',
-    emptySubtitle: 'Создайте резерв, план по ФОТ, налогам или росту бизнеса',
-    needReserve: 'Нужно зарезервировать',
-    complete: 'Цель закрыта',
-    reserveAction: '+ Зарезервировать',
-    reserveTitle: 'Зарезервировать',
-    reserveToGoal: 'Нужно зарезервировать до цели',
-    reservedToast: 'Зарезервировано',
-  },
-  personal: {
-    title: 'Финансовые цели',
-    subtitle: 'Планируйте накопления, подушку безопасности, крупные покупки и личные приоритеты',
-    newTitle: 'Новая финансовая цель',
-    editTitle: 'Редактировать финансовую цель',
-    nameLabel: 'Название финансовой цели *',
-    nameError: 'Укажите название финансовой цели',
-    namePlaceholder: 'Например: Подушка безопасности или отпуск',
-    countLabel: 'Финансовых целей',
-    savedLabel: 'Накоплено',
-    savedInputLabel: 'Уже накоплено, ₸',
-    depositPlaceholder: 'Сумма пополнения, ₸',
-    targetLabel: 'Целевая сумма',
-    completeCountLabel: 'Достигнуто',
-    created: 'Финансовая цель создана',
-    updated: 'Финансовая цель обновлена',
-    deleted: 'Финансовая цель удалена',
-    deleteConfirm: 'Удалить финансовую цель',
-    emptyTitle: 'Пока нет финансовых целей',
-    emptySubtitle: 'Создайте цель для накоплений, подушки безопасности или крупной покупки',
-    needReserve: 'Осталось накопить',
-    complete: 'Цель достигнута',
-    reserveAction: '+ Пополнить цель',
-    reserveTitle: 'Пополнить цель',
-    reserveToGoal: 'Осталось накопить до цели',
-    reservedToast: 'Добавлено в цель',
-  },
+function getIcons(t) {
+  return [
+    { key: 'reserve', label: t.reserveLabel || 'Резерв' },
+    { key: 'payroll', label: t.payrollLabel || 'ФОТ' },
+    { key: 'tax', label: t.taxLabel || 'Налоги' },
+    { key: 'capital', label: t.capitalLabel || 'Капитал' },
+    { key: 'growth', label: t.growthLabel || 'Рост' },
+    { key: 'automation', label: t.automationLabel || 'Автоматизация' },
+  ]
 }
 
 // ─── Goal Card ──────────────────────────────────────────────────────────────
-function GoalCard({ goal, onEdit, onDeposit, copy }) {
+function GoalCard({ goal, onEdit, onDeposit, copy, t }) {
   const { name, target_amount, saved_amount, deadline, color, icon } = goal
   const target = Number(target_amount) || 0
   const saved = Number(saved_amount) || 0
@@ -155,7 +102,7 @@ function GoalCard({ goal, onEdit, onDeposit, copy }) {
       {/* Complete badge */}
       {isComplete && (
         <div className="absolute -top-2 -right-2 bg-mint text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg">
-          Достигнуто!
+          {t.goalReached || 'Достигнуто!'}
         </div>
       )}
 
@@ -176,7 +123,7 @@ function GoalCard({ goal, onEdit, onDeposit, copy }) {
         <button
           onClick={() => onEdit(goal)}
           className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all"
-          title="Редактировать"
+          title={t.edit || 'Редактировать'}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 4l4 4-11 11H5v-4L16 4Z" />
@@ -200,7 +147,7 @@ function GoalCard({ goal, onEdit, onDeposit, copy }) {
         <div className="flex items-center gap-3">
           {daysLeft !== null && !isComplete && (
             <span className={`${daysLeft < 30 ? 'text-amber-400' : 'text-white/40'}`}>
-              {daysLeft} дн
+              {daysLeft} {t.goalDaysLeft || 'дн'}
             </span>
           )}
           <span className="font-bold" style={{ color }}>{pctNum}%</span>
@@ -221,7 +168,7 @@ function GoalCard({ goal, onEdit, onDeposit, copy }) {
 }
 
 // ─── Add/Edit Goal Modal ────────────────────────────────────────────────────
-function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
+function GoalModal({ goal, onClose, onSave, onDelete, copy, t }) {
   const isNew = !goal?.id
   const [name, setName] = useState(goal?.name || '')
   const [target, setTarget] = useState(goal?.target_amount ? String(goal.target_amount) : '')
@@ -231,12 +178,13 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
   const [icon, setIcon] = useState(iconPaths[goal?.icon] ? goal.icon : 'reserve')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const ICONS = getIcons(t)
 
   const handleSave = async (e) => {
     e.preventDefault()
     if (!name.trim()) { setError(copy.nameError); return }
     const targetNum = Number(target.replace(/\s/g, ''))
-    if (!targetNum || targetNum <= 0) { setError('Укажите плановую сумму'); return }
+    if (!targetNum || targetNum <= 0) { setError(t.errPlanAmount || 'Укажите плановую сумму'); return }
     setSaving(true)
     setError('')
     const res = await onSave({
@@ -284,7 +232,7 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
 
           {/* Target amount */}
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Плановая сумма, ₸ *</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.planAmountLabel || 'Плановая сумма, ₸ *'}</label>
             <input
               type="text"
               inputMode="numeric"
@@ -312,18 +260,17 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
 
           {/* Deadline */}
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Срок цели (необязательно)</label>
-            <input
-              type="date"
+            <label className="text-white/40 text-xs mb-1.5 block">{t.deadlineLabel || 'Срок цели (необязательно)'}</label>
+            <LocalizedDatePicker
               value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-mint/40"
+              onChange={setDeadline}
+              placeholder={t.deadlineLabel || 'Срок цели'}
             />
           </div>
 
           {/* Icon picker */}
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Иконка</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.iconLabel || 'Иконка'}</label>
             <div className="grid grid-cols-2 gap-2">
               {ICONS.map((ic) => (
                 <button
@@ -343,7 +290,7 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
 
           {/* Color picker */}
           <div>
-            <label className="text-white/40 text-xs mb-1.5 block">Цвет</label>
+            <label className="text-white/40 text-xs mb-1.5 block">{t.colorLabel || 'Цвет'}</label>
             <div className="flex flex-wrap gap-2">
               {DEFAULT_COLORS.map((c) => (
                 <button
@@ -368,20 +315,20 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
                 onClick={() => onDelete(goal)}
                 className="text-red-400/60 hover:text-red-400 text-xs transition-colors"
               >
-                Удалить цель
+                {t.deleteGoalConfirm || 'Удалить цель'}
               </button>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-sm px-4 py-2">
-              Отмена
+              {t.cancel || 'Отмена'}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="bg-mint hover:bg-mint/90 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-colors"
             >
-              {saving ? 'Сохраняю…' : 'Сохранить'}
+              {saving ? (t.saving || 'Сохраняю…') : (t.save || 'Сохранить')}
             </button>
           </div>
         </div>
@@ -391,7 +338,7 @@ function GoalModal({ goal, onClose, onSave, onDelete, copy }) {
 }
 
 // ─── Deposit Modal ──────────────────────────────────────────────────────────
-function DepositModal({ goal, onClose, onDeposit, copy }) {
+function DepositModal({ goal, onClose, onDeposit, copy, t }) {
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -400,7 +347,7 @@ function DepositModal({ goal, onClose, onDeposit, copy }) {
   const handleDeposit = async (e) => {
     e.preventDefault()
     const num = Number(amount.replace(/\s/g, ''))
-    if (!num || num <= 0) { setError('Введите сумму'); return }
+    if (!num || num <= 0) { setError(t.errPositiveAmount || 'Введите сумму'); return }
     setSaving(true)
     setError('')
     const res = await onDeposit(goal, num)
@@ -450,7 +397,7 @@ function DepositModal({ goal, onClose, onDeposit, copy }) {
                 onClick={() => setAmount(String(remaining))}
                 className="bg-mint/10 hover:bg-mint/20 border border-mint/20 rounded-lg px-2.5 py-1.5 text-xs text-mint hover:text-mint transition-colors"
               >
-                Весь остаток ({fmt(remaining)} ₸)
+                {t.allRemaining || 'Весь остаток'} ({fmt(remaining)} ₸)
               </button>
             )}
           </div>
@@ -458,7 +405,7 @@ function DepositModal({ goal, onClose, onDeposit, copy }) {
         </div>
 
         <div className="px-5 py-4 border-t border-white/5 flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-sm px-4 py-2">Отмена</button>
+          <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-sm px-4 py-2">{t.cancel || 'Отмена'}</button>
           <button
             type="submit"
             disabled={saving}
@@ -474,13 +421,74 @@ function DepositModal({ goal, onClose, onDeposit, copy }) {
 
 // ─── Main view ──────────────────────────────────────────────────────────────
 export default function GoalsView({ userId, profileType = 'business' }) {
+  const { t } = useLanguage()
   const [goals, setGoals] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editingGoal, setEditingGoal] = useState(null) // null | 'new' | goal object
   const [depositGoal, setDepositGoal] = useState(null)
   const [toast, setToast] = useState(null)
-  const copy = profileType === 'personal' ? GOAL_COPY.personal : GOAL_COPY.business
+  
+  const isPersonal = profileType === 'personal'
+  
+  const copy = useMemo(() => {
+    if (isPersonal) {
+      return {
+        title: t.goalsTitle || 'Финансовые цели',
+        subtitle: t.goalsSubtitle || 'Планируйте накопления, подушку безопасности, крупные покупки и личные приоритеты',
+        newTitle: t.newGoal || 'Новая финансовая цель',
+        editTitle: t.editGoal || 'Редактировать финансовая цель',
+        nameLabel: t.nameLabel || 'Название финансовой цели *',
+        nameError: t.nameError || 'Укажите название финансовой цели',
+        namePlaceholder: t.namePlaceholder || 'Например: Подушка безопасности или отпуск',
+        countLabel: t.goalsCount || 'Финансовых целей',
+        savedLabel: t.savedLabel || 'Накоплено',
+        savedInputLabel: t.savedInputLabel || 'Уже накоплено, ₸',
+        depositPlaceholder: t.depositPlaceholder || 'Сумма пополнения, ₸',
+        targetLabel: t.targetLabel || 'Целевая сумма',
+        completeCountLabel: t.completeCountLabel || 'Достигнуто',
+        created: t.goalCreated || 'Финансовая цель создана',
+        updated: t.goalUpdated || 'Финансовая цель обновлена',
+        deleted: t.goalDeleted || 'Финансовая цель удалена',
+        deleteConfirm: t.deleteGoalConfirm || 'Удалить финансовую цель',
+        emptyTitle: t.emptyTitle || 'Пока нет финансовых целей',
+        emptySubtitle: t.emptySubtitle || 'Создайте цель для накоплений, подушки безопасности или крупной покупки',
+        needReserve: t.needAccumulate || 'Осталось накопить',
+        complete: t.goalComplete || 'Цель достигнута',
+        reserveAction: t.depositAction || '+ Пополнить цель',
+        reserveTitle: t.depositTitle || 'Пополнить цель',
+        reserveToGoal: t.depositToGoal || 'Осталось накопить до цели',
+        reservedToast: t.depositedToast || 'Добавлено в цель',
+      }
+    }
+    return {
+      title: t.bizGoalsTitle || 'Цели бизнеса',
+      subtitle: t.bizGoalsSubtitle || 'Планируйте резервы, обязательства и инвестиции в рост компании',
+      newTitle: t.newBizGoal || 'Новая бизнес-цель',
+      editTitle: t.editBizGoal || 'Редактировать бизнес-цель',
+      nameLabel: t.bizGoalNameLabel || 'Название бизнес-цели *',
+      nameError: t.bizGoalNameError || 'Укажите название бизнес-цели',
+      namePlaceholder: t.bizGoalPlaceholder || 'Например: Резерв на 3 месяца расходов',
+      countLabel: t.bizGoalsCount || 'Целей бизнеса',
+      savedLabel: t.reservedLabel || 'Зарезервировано',
+      savedInputLabel: t.reservedInputLabel || 'Уже зарезервировано, ₸',
+      depositPlaceholder: t.reservePlaceholder || 'Сумма резерва, ₸',
+      targetLabel: t.bizTargetLabel || 'План',
+      completeCountLabel: t.bizCompleteCountLabel || 'Закрыто',
+      created: t.bizGoalCreated || 'Бизнес-цель создана',
+      updated: t.bizGoalUpdated || 'Бизнес-цель обновлена',
+      deleted: t.bizGoalDeleted || 'Бизнес-цель удалена',
+      deleteConfirm: t.bizDeleteGoalConfirm || 'Удалить бизнес-цель',
+      emptyTitle: t.bizEmptyTitle || 'Пока нет бизнес-целей',
+      emptySubtitle: t.bizEmptySubtitle || 'Создайте резерв, план по ФОТ, налогам или росту бизнеса',
+      needReserve: t.needReserve || 'Нужно зарезервировать',
+      complete: t.bizGoalComplete || 'Цель закрыта',
+      reserveAction: t.reserveAction || '+ Зарезервировать',
+      reserveTitle: t.reserveTitle || 'Зарезервировать',
+      reserveToGoal: t.reserveToGoal || 'Нужно зарезервировать до цели',
+      reservedToast: t.reservedToast || 'Зарезервировано',
+    }
+  }, [isPersonal, t])
 
   const fetchGoals = useCallback(async () => {
     if (!userId) return
@@ -529,7 +537,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
     if (!goal?.id) return
     if (!confirm(`${copy.deleteConfirm} "${goal.name}"?`)) return
     const { error: delErr } = await supabase.from('savings_goals').delete().eq('id', goal.id)
-    if (delErr) { showToast(`Ошибка: ${delErr.message}`); return }
+    if (delErr) { showToast(`${t.error || 'Ошибка'}: ${delErr.message}`); return }
     setEditingGoal(null)
     await fetchGoals()
     window.dispatchEvent(new CustomEvent('finvy:business-goals-updated'))
@@ -596,7 +604,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
           </div>
           <div className="bg-white/[0.03] border border-white/5 rounded-xl px-3 py-2.5">
             <p className="text-white/40 text-[10px] uppercase tracking-wider font-semibold">{copy.completeCountLabel}</p>
-            <p className="mt-1 font-bold text-sm sm:text-base text-mint tabular-nums">{completedCount} из {goals.length}</p>
+            <p className="mt-1 font-bold text-sm sm:text-base text-mint tabular-nums">{completedCount} {t.fromTotalOf || 'из'} {goals.length}</p>
           </div>
         </div>
 
@@ -610,7 +618,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
         {/* Error */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 mb-4 text-sm">
-            Ошибка: {error}
+            {t.error || 'Ошибка'}: {error}
           </div>
         )}
 
@@ -634,6 +642,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
                 onEdit={setEditingGoal}
                 onDeposit={setDepositGoal}
                 copy={copy}
+                t={t}
               />
             ))}
           </div>
@@ -647,6 +656,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
             onSave={handleSave}
             onDelete={editingGoal !== 'new' ? handleDelete : null}
             copy={copy}
+            t={t}
           />
         )}
 
@@ -657,6 +667,7 @@ export default function GoalsView({ userId, profileType = 'business' }) {
             onClose={() => setDepositGoal(null)}
             onDeposit={handleDeposit}
             copy={copy}
+            t={t}
           />
         )}
 

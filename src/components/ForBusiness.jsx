@@ -36,7 +36,7 @@ export default function ForBusiness({ onOpenModal }) {
             <div className="text-center lg:text-left">
               <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#d7e8ff] bg-white/78 px-4 py-2 text-sm font-bold text-[#1d66f2] shadow-[0_14px_36px_-28px_rgba(29,102,242,0.55)] lg:mx-0">
                 <IconLock className="h-4 w-4" />
-                Финансовые отчёты без ручной сборки
+                {lt.bizBadge}
               </div>
 
               <h3 className="mx-auto max-w-3xl whitespace-pre-line text-3xl font-black leading-tight tracking-tight text-[#123b73] sm:text-4xl lg:mx-0 lg:text-[2.75rem]">
@@ -44,7 +44,7 @@ export default function ForBusiness({ onOpenModal }) {
               </h3>
 
               <p className="mx-auto mt-4 max-w-2xl text-base font-semibold leading-relaxed text-[#587198] lg:mx-0">
-                Finvy собирает операции, категории и движение денег в понятный управленческий отчёт для собственника.
+                {lt.bizDesc}
               </p>
 
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
@@ -58,11 +58,7 @@ export default function ForBusiness({ onOpenModal }) {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                {[
-                  ['Cash Flow', 'готов сразу'],
-                  ['P&L', 'по категориям'],
-                  ['PDF', 'для отчетности'],
-                ].map(([title, desc]) => (
+                {lt.bizFeatures.map(([title, desc]) => (
                   <div key={title} className="rounded-2xl border border-[#d7e8ff] bg-white/76 px-4 py-3 text-left shadow-[0_16px_40px_-32px_rgba(22,75,145,0.45)] backdrop-blur">
                     <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-[#eaf5ff] text-[#1d66f2]">
                       <IconCheck className="h-4 w-4" />
@@ -72,6 +68,7 @@ export default function ForBusiness({ onOpenModal }) {
                   </div>
                 ))}
               </div>
+
             </div>
 
             <div className="relative mx-auto w-full max-w-md">

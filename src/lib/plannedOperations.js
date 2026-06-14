@@ -32,21 +32,31 @@ function monthKeysBetween(from, to) {
   return months
 }
 
-export function readPlannedPayroll(userId) {
+async function fetchPlannedPayroll(userId) {
   if (!userId) return null
 
   try {
+    // 1. Try Supabase first
+    const { data, error } = await supabase
+      .from('fm_planned_payroll')
+      .select('amount, description, category')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (!error && data) return data
+
+    // 2. Fallback to localStorage
     const saved = JSON.parse(localStorage.getItem(`finvy_planned_payroll_${userId}`) || 'null')
     if (saved?.amount > 0) return saved
-  } catch {
-    // Ignore broken local drafts.
+  } catch (e) {
+    console.warn('[fetchPlannedPayroll] error:', e)
   }
 
   return null
 }
 
-function payrollOperations(userId, from, to) {
-  const plannedPayroll = readPlannedPayroll(userId)
+async function payrollOperations(userId, from, to) {
+  const plannedPayroll = await fetchPlannedPayroll(userId)
   if (!plannedPayroll?.amount) return []
 
   return monthKeysBetween(from, to).map(m => {
@@ -186,16 +196,17 @@ async function surveyObligationOperations(userId, from, to) {
 export async function getPlannedOperations({ userId, from, to }) {
   if (!from || !to) return []
 
-  const [invoices, goals, obligations] = await Promise.all([
+  const [invoices, goals, obligations, payroll] = await Promise.all([
     invoiceOperations(userId, from, to),
     goalReserveOperations(userId, from, to),
     surveyObligationOperations(userId, from, to),
+    payrollOperations(userId, from, to),
   ])
 
   return [
     ...invoices,
     ...obligations,
-    ...payrollOperations(userId, from, to),
+    ...payroll,
     ...goals,
   ].filter(op => op.date >= from && op.date <= to)
     .sort((a, b) => a.date.localeCompare(b.date))

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { parseKaspiStatement, computeStatistics } from '../../utils/kaspiParser'
 import { matchCategory, computeRecommendations, bestCardForCategory, CB_CAT_LABELS_RU } from '../../data/bankCashbacks'
 import { useLiveCashbacks } from '../../hooks/useLiveCashbacks'
+import { useLanguage } from '../../context/LanguageContext'
 
 const fmt = (n) => Math.round(n).toLocaleString('ru-RU')
 
@@ -16,7 +17,7 @@ const txIdentity = (tx) => [
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 0 — File upload
 // ─────────────────────────────────────────────────────────────────────────────
-function StepUpload({ onParsed, loading, setLoading, error, setError }) {
+function StepUpload({ onParsed, loading, setLoading, error, setError, t }) {
   const [dragOver, setDragOver] = useState(false)
 
   const handleFile = useCallback(async (file) => {
@@ -26,17 +27,17 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
     try {
       const transactions = await parseKaspiStatement(file)
       if (transactions.length === 0) {
-        setError('Не найдено транзакций. Проверьте формат файла.')
+        setError(t.errSomethingWrong || 'Не найдено транзакций. Проверьте формат файла.')
         setLoading(false)
         return
       }
       const stats = computeStatistics(transactions)
       onParsed({ transactions, stats, fileName: file.name })
     } catch (e) {
-      setError(e.message || 'Ошибка при разборе файла')
+      setError(e.message || (t.error || 'Ошибка при разборе файла'))
     }
     setLoading(false)
-  }, [onParsed, setError, setLoading])
+  }, [onParsed, setError, setLoading, t])
 
   const onDrop = (e) => {
     e.preventDefault()
@@ -48,10 +49,8 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-white font-bold text-base">Импорт выписки</h3>
-        <p className="text-white/40 text-sm mt-1">
-          Загрузите выписку из Kaspi или другого банка — мы проанализируем траты и подберём лучший кэшбэк
-        </p>
+        <h3 className="text-white font-bold text-base">{t.importStatement}</h3>
+        <p className="text-white/40 text-sm mt-1">{t.uploadStatementDesc}</p>
       </div>
 
       {/* Drop zone */}
@@ -69,7 +68,7 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
         {loading ? (
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-3 border-[#4F8EF7]/30 border-t-[#4F8EF7] rounded-full animate-spin" />
-            <p className="text-white/50 text-sm">Анализируем выписку...</p>
+            <p className="text-white/50 text-sm">{t.analyzingStatement}</p>
           </div>
         ) : (
           <>
@@ -82,10 +81,10 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
               </svg>
             </div>
             <p className="text-white/70 text-sm font-semibold mb-1">
-              Перетащите файл сюда или нажмите
+              {t.dropFileHere || 'Перетащите файл сюда или нажмите'}
             </p>
             <p className="text-white/30 text-xs">
-              Поддерживаемые форматы: .pdf, .xlsx, .xls, .csv
+              {t.supportedFormats}
             </p>
           </>
         )}
@@ -106,7 +105,7 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
 
       {/* Supported banks hint */}
       <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3">Как получить выписку</p>
+        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3">{t.howToGetStatement}</p>
         <div className="space-y-2.5">
           <div className="flex items-start gap-2.5">
             <span className="text-base flex-shrink-0">🏦</span>
@@ -125,7 +124,7 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
           <div className="flex items-start gap-2.5">
             <span className="text-base flex-shrink-0">🔵</span>
             <div>
-              <p className="text-white/60 text-xs font-semibold">Другие банки</p>
+              <p className="text-white/60 text-xs font-semibold">{t.other} банки</p>
               <p className="text-white/30 text-[11px]">Любая выписка с колонками: Дата, Сумма, Описание</p>
             </div>
           </div>
@@ -138,7 +137,7 @@ function StepUpload({ onParsed, loading, setLoading, error, setError }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 1 — Statistics overview
 // ─────────────────────────────────────────────────────────────────────────────
-function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
+function StepStats({ stats, fileName, onCashback, onSave, onBack, t, lang }) {
   const { banks } = useLiveCashbacks()
   const {
     totalExpense, totalIncome, netFlow, transactionCount,
@@ -160,47 +159,47 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-white font-bold text-base">Ваша статистика</h3>
+          <h3 className="text-white font-bold text-base">{t.yourStats}</h3>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4F8EF7]/15 text-[#4F8EF7] border border-[#4F8EF7]/25 font-bold">
             {fileName}
           </span>
         </div>
         <p className="text-white/30 text-xs">
-          {formatDate(dateFrom)} — {formatDate(dateTo)} · {transactionCount} транзакций
+          {formatDate(dateFrom)} — {formatDate(dateTo)} · {transactionCount} {t.reportTxCount?.toLowerCase()}
         </p>
       </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-3">
-          <p className="text-white/35 text-[10px] mb-1">Расходы</p>
-          <p className="text-red-400 text-lg font-black">{fmt(totalExpense)} ₸</p>
-          <p className="text-white/20 text-[10px]">{expenseCount} операций</p>
+          <p className="text-white/35 text-[10px] mb-1">{t.reportExpense}</p>
+          <p className="text-red-400 text-lg font-black">{Math.round(totalExpense).toLocaleString(lang)} ₸</p>
+          <p className="text-white/20 text-[10px]">{expenseCount} оп.</p>
         </div>
         <div className="bg-[#4F8EF7]/5 border border-[#4F8EF7]/10 rounded-xl p-3">
-          <p className="text-white/35 text-[10px] mb-1">Доходы</p>
-          <p className="text-[#4F8EF7] text-lg font-black">{fmt(totalIncome)} ₸</p>
-          <p className="text-white/20 text-[10px]">{incomeCount} операций</p>
+          <p className="text-white/35 text-[10px] mb-1">{t.reportIncome}</p>
+          <p className="text-[#4F8EF7] text-lg font-black">{Math.round(totalIncome).toLocaleString(lang)} ₸</p>
+          <p className="text-white/20 text-[10px]">{incomeCount} оп.</p>
         </div>
         <div className={`border rounded-xl p-3 ${netFlow >= 0 ? 'bg-green-500/5 border-green-500/10' : 'bg-red-500/5 border-red-500/10'}`}>
-          <p className="text-white/35 text-[10px] mb-1">Баланс</p>
+          <p className="text-white/35 text-[10px] mb-1">{t.reportProfit}</p>
           <p className={`text-lg font-black ${netFlow >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {netFlow >= 0 ? '+' : '−'}{fmt(Math.abs(netFlow))} ₸
+            {netFlow >= 0 ? '+' : '−'}{Math.round(Math.abs(netFlow)).toLocaleString(lang)} ₸
           </p>
-          <p className="text-white/20 text-[10px]">за период</p>
+          <p className="text-white/20 text-[10px]">{t.reportPeriod?.toLowerCase()}</p>
         </div>
       </div>
 
       {/* Avg daily + largest */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-          <p className="text-white/35 text-[10px] mb-1">📊 Среднедневной расход</p>
-          <p className="text-white text-base font-bold">{fmt(avgDaily)} ₸</p>
+          <p className="text-white/35 text-[10px] mb-1">📊 {t.avgDailySpend}</p>
+          <p className="text-white text-base font-bold">{Math.round(avgDaily).toLocaleString(lang)} ₸</p>
         </div>
         {largestExpense && (
           <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-            <p className="text-white/35 text-[10px] mb-1">💰 Крупнейшая трата</p>
-            <p className="text-white text-base font-bold">{fmt(largestExpense.amount)} ₸</p>
+            <p className="text-white/35 text-[10px] mb-1">💰 {t.largestSpend}</p>
+            <p className="text-white text-base font-bold">{Math.round(largestExpense.amount).toLocaleString(lang)} ₸</p>
             <p className="text-white/25 text-[10px] truncate">{largestExpense.description || largestExpense.category}</p>
           </div>
         )}
@@ -208,7 +207,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
 
       {/* Top categories */}
       <div className="mb-4">
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">Расходы по категориям</p>
+        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">{t.reportByCategory}</p>
         <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
           {topCategories.slice(0, 8).map(([catName, data]) => {
             const pct = totalExpense > 0 ? (data.expense / totalExpense * 100) : 0
@@ -224,7 +223,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
                     <span className="text-white/20 text-[10px]">{data.count} оп.</span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-white/70 text-xs font-bold">{fmt(data.expense)} ₸</span>
+                    <span className="text-white/70 text-xs font-bold">{Math.round(data.expense).toLocaleString(lang)} ₸</span>
                     <span className="text-white/25 text-[10px]">{pct.toFixed(0)}%</span>
                   </div>
                 </div>
@@ -235,7 +234,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
                   {best && (
                     <span className="text-[9px] font-bold flex-shrink-0 px-1.5 py-0.5 rounded"
                       style={{ background: best.bank.color + '20', color: best.bank.color }}>
-                      {best.bank.logo} до {best.rule.percent}%
+                      {best.bank.logo} {t.fromLabel || 'до'} {best.rule.percent}%
                     </span>
                   )}
                 </div>
@@ -247,7 +246,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
 
       {/* Weekly spending pattern */}
       <div className="mb-4">
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">Расходы по дням недели</p>
+        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">{t.spendingByWeekday}</p>
         <div className="flex items-end gap-1.5 h-16 px-2">
           {weekdaySpending.map((w, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -263,12 +262,12 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
       {/* Monthly breakdown */}
       {months.length > 1 && (
         <div className="mb-4">
-          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">По месяцам</p>
+          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-2.5">{t.monthlyBreakdown}</p>
           <div className="space-y-1">
             {months.map(([month, total]) => {
               const [y, m] = month.split('-')
-              const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
-              const label = `${monthNames[parseInt(m) - 1]} ${y}`
+              const monthNames = t.monthsNames || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+              const label = `${monthNames[parseInt(m) - 1].slice(0, 3)} ${y}`
               const maxMonth = Math.max(...months.map(([, v]) => v), 1)
               return (
                 <div key={month} className="flex items-center gap-2">
@@ -276,7 +275,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
                   <div className="flex-1 bg-white/[0.05] rounded-full h-2">
                     <div className="h-2 rounded-full bg-[#4F8EF7]/70" style={{ width: `${(total / maxMonth) * 100}%` }} />
                   </div>
-                  <span className="text-white/50 text-[10px] font-bold w-20 text-right flex-shrink-0">{fmt(total)} ₸</span>
+                  <span className="text-white/50 text-[10px] font-bold w-20 text-right flex-shrink-0">{Math.round(total).toLocaleString(lang)} ₸</span>
                 </div>
               )
             })}
@@ -288,15 +287,15 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button onClick={onBack}
           className="py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
-          ← Загрузить другой
+          ← {t.loadAnother}
         </button>
         <button onClick={onSave}
           className="py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white/70 hover:bg-white/[0.1] hover:text-white font-bold text-sm transition-colors">
-          Сохранить операции
+          {t.saveOperations}
         </button>
         <button onClick={onCashback}
           className="py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-all shadow-[0_0_20px_rgba(79,142,247,0.25)] flex items-center justify-center gap-1.5">
-          <span>💳</span> Подобрать лучший кэшбэк →
+          <span>💳</span> {t.seeRecommendations} →
         </button>
       </div>
     </div>
@@ -306,7 +305,7 @@ function StepStats({ stats, fileName, onCashback, onSave, onBack }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 2 — Save imported transactions
 // ─────────────────────────────────────────────────────────────────────────────
-function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
+function StepSave({ parsed, userId, demo, onImported, onCashback, onBack, t, lang }) {
   const [accounts, setAccounts] = useState([])
   const [selectedAccountId, setSelectedAccountId] = useState('')
   const [existingKeys, setExistingKeys] = useState(new Set())
@@ -344,7 +343,7 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
       if (cancelled) return
 
       if (accountsError || txError) {
-        setError(accountsError?.message || txError?.message || 'Не удалось проверить импорт')
+        setError(accountsError?.message || txError?.message || (t.errSomethingWrong || 'Не удалось проверить импорт'))
       }
 
       const rows = accountRows || []
@@ -356,7 +355,7 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
 
     loadContext()
     return () => { cancelled = true }
-  }, [demo, parsed.stats.dateFrom, parsed.stats.dateTo, userId])
+  }, [demo, parsed.stats.dateFrom, parsed.stats.dateTo, userId, t])
 
   const prepared = parsed.transactions.map(tx => ({
     ...tx,
@@ -369,7 +368,7 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
   const handleSave = async () => {
     if (demo) return
     if (!selectedAccountId) {
-      setError('Сначала выберите счет для импорта')
+      setError(t.errSelectAccount || 'Сначала выберите счет для импорта')
       return
     }
     if (newRows.length === 0) {
@@ -384,11 +383,11 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
       user_id: userId,
       type: tx.type,
       amount: Math.abs(tx.amount || 0),
-      description: tx.description || 'Импорт выписки',
+      description: tx.description || t.importStatement,
       accountId: selectedAccountId,
       date: tx.date,
       category: tx.category || null,
-      comment: `Импорт: ${parsed.fileName}`,
+      comment: `Import: ${parsed.fileName}`,
     }))
 
     const { error: insertError } = await supabase
@@ -396,7 +395,7 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
       .insert(rows)
 
     if (insertError) {
-      setError(insertError.message || 'Не удалось сохранить транзакции')
+      setError(insertError.message || (t.errSomethingWrong || 'Не удалось сохранить транзакции'))
       setSaving(false)
       return
     }
@@ -421,20 +420,18 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
   if (demo) {
     return (
       <div>
-        <h3 className="text-white font-bold text-base mb-2">Сохранение в демо-режиме</h3>
+        <h3 className="text-white font-bold text-base mb-2">{t.saveImport} ({t.demoProfile})</h3>
         <div className="bg-[#4F8EF7]/10 border border-[#4F8EF7]/20 rounded-2xl p-4 mb-4">
-          <p className="text-white/70 text-sm">
-            В демо-режиме импорт можно разобрать и проанализировать, но сохранять операции в базу нельзя. В реальном аккаунте здесь появится выбор счета, проверка дублей и запись в транзакции.
-          </p>
+          <p className="text-white/70 text-sm">{t.demoSaveWarning}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={onBack}
             className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
-            ← Статистика
+            ← {t.stepStats}
           </button>
           <button onClick={onCashback}
             className="flex-1 py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-colors">
-            Кэшбэк →
+            {t.stepCashback} →
           </button>
         </div>
       </div>
@@ -444,10 +441,8 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
   return (
     <div>
       <div className="mb-4">
-        <h3 className="text-white font-bold text-base">Сохранить импорт</h3>
-        <p className="text-white/30 text-xs mt-1">
-          Выберите счет, проверьте найденные дубли и добавьте операции в общий финансовый слой.
-        </p>
+        <h3 className="text-white font-bold text-base">{t.saveImport}</h3>
+        <p className="text-white/30 text-xs mt-1">{t.selectAccountDesc}</p>
       </div>
 
       {loading ? (
@@ -463,13 +458,13 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
           )}
 
           <label className="block mb-4">
-            <span className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">Счет для операций</span>
+            <span className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">{t.accountForOps}</span>
             <select
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
               className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-[#4F8EF7]/50"
             >
-              {accounts.length === 0 && <option value="">Нет счетов</option>}
+              {accounts.length === 0 && <option value="">{t.noAccounts}</option>}
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} · {account.currency || 'KZT'}
@@ -480,15 +475,15 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
 
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-              <p className="text-white/30 text-[10px] mb-1">Найдено</p>
+              <p className="text-white/30 text-[10px] mb-1">{t.found}</p>
               <p className="text-white text-lg font-black">{prepared.length}</p>
             </div>
             <div className="bg-[#4F8EF7]/5 border border-[#4F8EF7]/10 rounded-xl p-3">
-              <p className="text-white/30 text-[10px] mb-1">Новые</p>
+              <p className="text-white/30 text-[10px] mb-1">{t.new}</p>
               <p className="text-[#4F8EF7] text-lg font-black">{newRows.length}</p>
             </div>
             <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3">
-              <p className="text-white/30 text-[10px] mb-1">Дубли</p>
+              <p className="text-white/30 text-[10px] mb-1">{t.duplicates}</p>
               <p className="text-amber-300 text-lg font-black">{duplicateCount}</p>
             </div>
           </div>
@@ -499,16 +494,16 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
                 <div>
                   <p className="text-white/45 text-[10px]">{tx.date}</p>
                   <p className={`text-[10px] font-bold ${tx.type === 'income' ? 'text-emerald-300' : 'text-red-300'}`}>
-                    {tx.type === 'income' ? 'Доход' : 'Расход'}
+                    {tx.type === 'income' ? t.reportIncome : t.reportExpense}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-white/70 text-xs font-semibold truncate">{tx.description || tx.category || 'Операция'}</p>
-                  <p className="text-white/30 text-[10px] truncate">{tx.category || 'Без категории'}</p>
+                  <p className="text-white/70 text-xs font-semibold truncate">{tx.description || tx.category || t.operation}</p>
+                  <p className="text-white/30 text-[10px] truncate">{tx.category || (t.noCategory || 'Без категории')}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white/70 text-xs font-bold">{fmt(Math.abs(tx.amount || 0))} ₸</p>
-                  {tx.duplicate && <p className="text-amber-300 text-[9px] font-bold">дубль</p>}
+                  <p className="text-white/70 text-xs font-bold">{Math.round(Math.abs(tx.amount || 0)).toLocaleString(lang)} ₸</p>
+                  {tx.duplicate && <p className="text-amber-300 text-[9px] font-bold">{t.duplicate}</p>}
                 </div>
               </div>
             ))}
@@ -517,7 +512,7 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
           {saveResult && (
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-4">
               <p className="text-emerald-300 text-sm font-semibold">
-                Сохранено: {saveResult.imported}. Пропущено дублей: {saveResult.skipped}.
+                {t.savedCount}: {saveResult.imported}. {t.skippedCount}: {saveResult.skipped}.
               </p>
             </div>
           )}
@@ -525,15 +520,15 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button onClick={onBack}
               className="py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium transition-colors">
-              ← Статистика
+              ← {t.stepStats}
             </button>
             <button onClick={handleSave} disabled={saving || !selectedAccountId || newRows.length === 0}
               className="py-3 rounded-xl bg-[#4F8EF7] disabled:bg-white/[0.06] disabled:text-white/20 text-white font-bold text-sm hover:bg-[#4F8EF7]/90 transition-colors">
-              {saving ? 'Сохраняем...' : `Сохранить ${newRows.length}`}
+              {saving ? (t.saving || 'Сохраняем...') : `${t.save || 'Сохранить'} ${newRows.length}`}
             </button>
             <button onClick={onCashback}
               className="py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white/70 hover:bg-white/[0.1] hover:text-white font-bold text-sm transition-colors">
-              Кэшбэк →
+              {t.stepCashback} →
             </button>
           </div>
         </>
@@ -543,9 +538,9 @@ function StepSave({ parsed, userId, demo, onImported, onCashback, onBack }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 3 — Cashback recommendations (reuses logic from CashbackReportModal)
+// Step 3 — Cashback recommendations
 // ─────────────────────────────────────────────────────────────────────────────
-function StepCashback({ stats, onBack }) {
+function StepCashback({ stats, onBack, t, lang }) {
   const [expandedCard, setExpandedCard] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const { banks, source, updatedAt, version } = useLiveCashbacks()
@@ -558,80 +553,49 @@ function StepCashback({ stats, onBack }) {
   const downloadReport = async () => {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-
     let y = 20
-    const lm = 20 // left margin
-    const pw = 170 // page width
+    const lm = 20, pw = 170
 
-    // Title
-    doc.setFontSize(18)
-    doc.setTextColor(79, 142, 247)
+    doc.setFontSize(18); doc.setTextColor(79, 142, 247)
     doc.text('Finvy', lm, y)
-    doc.setTextColor(100, 100, 100)
-    doc.setFontSize(10)
-    doc.text('Cashback Report', lm + 30, y)
-    y += 12
+    doc.setTextColor(100, 100, 100); doc.setFontSize(10)
+    doc.text('Cashback Report', lm + 30, y); y += 12
 
-    doc.setDrawColor(79, 142, 247)
-    doc.setLineWidth(0.5)
-    doc.line(lm, y, lm + pw, y)
-    y += 8
+    doc.setDrawColor(79, 142, 247); doc.setLineWidth(0.5)
+    doc.line(lm, y, lm + pw, y); y += 8
 
-    // Period & total
-    doc.setFontSize(10)
-    doc.setTextColor(60, 60, 60)
-    doc.text(`Period: ${stats.dateFrom || '—'} — ${stats.dateTo || '—'}`, lm, y)
-    y += 6
-    doc.text(`Total expenses: ${fmt(stats.totalExpense)} KZT`, lm, y)
-    y += 10
+    doc.setFontSize(10); doc.setTextColor(60, 60, 60)
+    doc.text(`Period: ${stats.dateFrom || '—'} — ${stats.dateTo || '—'}`, lm, y); y += 6
+    doc.text(`Total expenses: ${Math.round(stats.totalExpense).toLocaleString(lang)} KZT`, lm, y); y += 10
 
-    // Top recommendations
-    doc.setFontSize(12)
-    doc.setTextColor(30, 30, 30)
-    doc.text('Top Recommendations', lm, y)
-    y += 8
+    doc.setFontSize(12); doc.setTextColor(30, 30, 30)
+    doc.text('Top Recommendations', lm, y); y += 8
 
     recommendations.slice(0, 5).forEach((r, i) => {
       if (y > 260) { doc.addPage(); y = 20 }
-      doc.setFontSize(10)
-      doc.setTextColor(79, 142, 247)
+      doc.setFontSize(10); doc.setTextColor(79, 142, 247)
       doc.text(`#${i + 1}`, lm, y)
       doc.setTextColor(30, 30, 30)
-      doc.text(`${r.bankName} — ${r.cardName}`, lm + 8, y)
-      y += 5
-      doc.setFontSize(9)
-      doc.setTextColor(80, 80, 80)
-      doc.text(`Cashback: ~${fmt(r.netCashback)} KZT/month (${fmt(r.netCashback * 12)} KZT/year)`, lm + 8, y)
-      y += 5
-      doc.text(r.highlight || '', lm + 8, y)
-      y += 7
+      doc.text(`${r.bankName} — ${r.cardName}`, lm + 8, y); y += 5
+      doc.setFontSize(9); doc.setTextColor(80, 80, 80)
+      doc.text(`Cashback: ~${Math.round(r.netCashback).toLocaleString(lang)} KZT/month (${Math.round(r.netCashback * 12).toLocaleString(lang)} KZT/year)`, lm + 8, y); y += 5
+      doc.text(r.highlight || '', lm + 8, y); y += 7
     })
 
-    y += 4
-    doc.setDrawColor(200, 200, 200)
-    doc.line(lm, y, lm + pw, y)
-    y += 8
+    y += 4; doc.setDrawColor(200, 200, 200); doc.line(lm, y, lm + pw, y); y += 8
 
-    // Spending by category
-    doc.setFontSize(12)
-    doc.setTextColor(30, 30, 30)
-    doc.text('Spending by Category', lm, y)
-    y += 8
+    doc.setFontSize(12); doc.setTextColor(30, 30, 30)
+    doc.text('Spending by Category', lm, y); y += 8
 
     stats.topCategories.forEach(([cat, v]) => {
       if (y > 270) { doc.addPage(); y = 20 }
-      doc.setFontSize(9)
-      doc.setTextColor(60, 60, 60)
+      doc.setFontSize(9); doc.setTextColor(60, 60, 60)
       doc.text(cat, lm, y)
-      doc.text(`${fmt(v.expense)} KZT`, lm + 100, y)
-      y += 5
+      doc.text(`${Math.round(v.expense).toLocaleString(lang)} KZT`, lm + 100, y); y += 5
     })
 
-    // Footer
-    y += 10
-    if (y > 275) { doc.addPage(); y = 20 }
-    doc.setFontSize(8)
-    doc.setTextColor(150, 150, 150)
+    y += 10; if (y > 275) { doc.addPage(); y = 20 }
+    doc.setFontSize(8); doc.setTextColor(150, 150, 150)
     doc.text('Generated by Finvy — finvy.kz', lm, y)
 
     doc.save('finvy-cashback-report.pdf')
@@ -641,9 +605,9 @@ function StepCashback({ stats, onBack }) {
     <div>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-white font-bold text-base">Лучшие карты для вас</h3>
+          <h3 className="text-white font-bold text-base">{t.bestCardsForYou}</h3>
           <p className="text-white/30 text-xs mt-1">
-            На основе {fmt(stats.totalExpense)} ₸ расходов из вашей выписки
+            {t.basedOnExpenses} {Math.round(stats.totalExpense).toLocaleString(lang)} ₸ {t.reportExpense?.toLowerCase()}
           </p>
         </div>
         <div className="flex-shrink-0 text-right">
@@ -658,7 +622,7 @@ function StepCashback({ stats, onBack }) {
           )}
           {updatedAt && (
             <p className="text-white/20 text-[9px] mt-1">
-              {new Date(updatedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })}
+              {new Date(updatedAt).toLocaleDateString(lang, { day: '2-digit', month: 'short' })}
             </p>
           )}
         </div>
@@ -671,7 +635,7 @@ function StepCashback({ stats, onBack }) {
                    border: `1px solid ${winner.bankColor}28` }}>
           <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
             style={{ background: winner.bankColor + '25', color: winner.bankColor }}>
-            🏆 #1 лучший выбор
+            🏆 #1 {t.bestChoice}
           </div>
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -686,12 +650,12 @@ function StepCashback({ stats, onBack }) {
               <p className="text-white/45 text-xs mb-2">{winner.highlight}</p>
               <div className="flex items-end gap-3">
                 <div>
-                  <p className="text-[10px] text-white/30 mb-0.5">в месяц</p>
-                  <p className="text-2xl font-black" style={{ color: winner.bankColor }}>+{fmt(winner.netCashback)} ₸</p>
+                  <p className="text-[10px] text-white/30 mb-0.5">{t.perMonth}</p>
+                  <p className="text-2xl font-black" style={{ color: winner.bankColor }}>+{Math.round(winner.netCashback).toLocaleString(lang)} ₸</p>
                 </div>
                 <div className="pb-0.5">
-                  <p className="text-[10px] text-white/25 mb-0.5">в год</p>
-                  <p className="text-sm font-bold text-white/50">+{fmt(winner.netCashback * 12)} ₸</p>
+                  <p className="text-[10px] text-white/25 mb-0.5">{t.perYear}</p>
+                  <p className="text-sm font-bold text-white/50">+{Math.round(winner.netCashback * 12).toLocaleString(lang)} ₸</p>
                 </div>
               </div>
             </div>
@@ -726,8 +690,8 @@ function StepCashback({ stats, onBack }) {
                   <p className="text-white/30 text-[10px] truncate mt-0.5">{card.highlight}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-black" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸</p>
-                  <p className="text-white/20 text-[10px]">/мес</p>
+                  <p className="text-sm font-black" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸</p>
+                  <p className="text-white/20 text-[10px]">/{t.month}</p>
                 </div>
               </button>
 
@@ -735,7 +699,7 @@ function StepCashback({ stats, onBack }) {
                 <div className="border-t px-3 py-3 space-y-1.5" style={{ borderColor: card.bankColor + '20', background: card.bankColor + '06' }}>
                   {card.breakdown.length > 0 ? (
                     <>
-                      <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider mb-1.5">Кэшбэк по вашим категориям</p>
+                      <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider mb-1.5">{t.cashbackAnalysis}</p>
                       {card.breakdown.map((b, i) => {
                         const emoji = CB_CAT_LABELS_RU[b.cbKey]?.split(' ')[0] || '💳'
                         const catLabel = CB_CAT_LABELS_RU[b.cbKey]?.split(' ').slice(1).join(' ') || b.cbKey
@@ -744,22 +708,22 @@ function StepCashback({ stats, onBack }) {
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm">{emoji}</span>
                               <span className="text-white/55 text-xs">{catLabel}</span>
-                              <span className="text-white/20 text-[10px] ml-1">{fmt(b.spend)} ₸</span>
+                              <span className="text-white/20 text-[10px] ml-1">{Math.round(b.spend).toLocaleString(lang)} ₸</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-white/25 text-[10px]">{b.percent}%</span>
-                              <span className="text-xs font-bold" style={{ color: card.bankColor }}>+{fmt(b.cashback)} ₸</span>
+                              <span className="text-xs font-bold" style={{ color: card.bankColor }}>+{Math.round(b.cashback).toLocaleString(lang)} ₸</span>
                             </div>
                           </div>
                         )
                       })}
                       <div className="flex items-center justify-between pt-1.5 border-t mt-1" style={{ borderColor: card.bankColor + '20' }}>
-                        <span className="text-white/35 text-xs font-semibold">Итого в месяц</span>
-                        <span className="font-black text-sm" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸</span>
+                        <span className="text-white/35 text-xs font-semibold">{t.totalPerMonth}</span>
+                        <span className="font-black text-sm" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸</span>
                       </div>
                     </>
                   ) : (
-                    <p className="text-white/30 text-xs py-2">Кэшбэк на «все покупки»: {fmt(card.netCashback)} ₸/мес</p>
+                    <p className="text-white/30 text-xs py-2">{t.cashbackAnalysis} {t.allTime?.toLowerCase()}: {Math.round(card.netCashback).toLocaleString(lang)} ₸/{t.month}</p>
                   )}
                 </div>
               )}
@@ -777,7 +741,7 @@ function StepCashback({ stats, onBack }) {
               className={`transition-transform ${showAll ? 'rotate-180' : ''}`}>
               <path d="M2 3l3 3 3-3"/>
             </svg>
-            {showAll ? 'Скрыть' : `Ещё ${rest.length} карт`}
+            {showAll ? t.hide : `${t.moreCards} ${rest.length} ${t.moreCards}`}
           </button>
           {showAll && (
             <div className="space-y-1 mt-1.5">
@@ -788,7 +752,7 @@ function StepCashback({ stats, onBack }) {
                     <span>{card.bankLogo}</span>
                     <span className="text-white/35 text-xs">{card.bankName} · {card.cardName}</span>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: card.bankColor }}>+{fmt(card.netCashback)} ₸/мес</span>
+                  <span className="text-xs font-semibold" style={{ color: card.bankColor }}>+{Math.round(card.netCashback).toLocaleString(lang)} ₸/{t.month}</span>
                 </div>
               ))}
             </div>
@@ -802,11 +766,11 @@ function StepCashback({ stats, onBack }) {
           <div className="flex items-start gap-2">
             <span className="text-lg">💡</span>
             <div>
-              <p className="text-[#4F8EF7] text-xs font-semibold mb-0.5">Персональный совет</p>
+              <p className="text-[#4F8EF7] text-xs font-semibold mb-0.5">{t.personalTip}</p>
               <p className="text-white/45 text-xs leading-relaxed">
-                По вашей реальной выписке карта <span className="text-white/70 font-medium">{winner.bankName} {winner.cardName}</span> принесёт
-                ~<span className="text-[#4F8EF7] font-bold">{fmt(winner.netCashback)} ₸</span> кэшбэка в месяц
-                — это <span className="text-white/70 font-semibold">{fmt(winner.netCashback * 12)} ₸ в год</span>.
+                С картой <span className="text-white/70 font-medium">{winner.bankName} {winner.cardName}</span> вы
+                будете получать примерно <span className="text-[#4F8EF7] font-bold">{Math.round(winner.netCashback).toLocaleString(lang)} ₸</span> кэшбэка
+                в месяц — это <span className="text-white/70 font-semibold">{Math.round(winner.netCashback * 12).toLocaleString(lang)} ₸ {t.perYear}</span>.
               </p>
             </div>
           </div>
@@ -817,14 +781,14 @@ function StepCashback({ stats, onBack }) {
       <div className="flex gap-2">
         <button onClick={onBack}
           className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white hover:border-white/20 text-xs font-medium transition-colors">
-          ← Статистика
+          ← {t.stepStats}
         </button>
         <button onClick={downloadReport}
           className="flex-[2] py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white/60 hover:bg-white/[0.08] hover:text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M2 9h8M6 1v6M3.5 5l2.5 2.5L9 5"/>
           </svg>
-          Скачать отчёт
+          {t.downloadReportPdf || 'Скачать отчёт'}
         </button>
       </div>
     </div>
@@ -834,8 +798,8 @@ function StepCashback({ stats, onBack }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step indicator
 // ─────────────────────────────────────────────────────────────────────────────
-function StepIndicator({ step }) {
-  const steps = ['Загрузка', 'Статистика', 'Сохранение', 'Кэшбэк']
+function StepIndicator({ step, t }) {
+  const steps = [t.stepUpload || 'Load', t.stepStats || 'Stats', t.stepSave || 'Save', t.stepCashback || 'Cashback']
   return (
     <div className="flex items-center gap-1 mb-5">
       {steps.map((label, i) => (
@@ -863,6 +827,7 @@ function StepIndicator({ step }) {
 // Main modal
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ImportStatementModal({ userId, demo = false, onImported, onClose }) {
+  const { t, lang } = useLanguage()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -885,8 +850,8 @@ export default function ImportStatementModal({ userId, demo = false, onImported,
                 📄
               </div>
               <div>
-                <p className="text-white font-bold text-sm">Импорт выписки</p>
-                <p className="text-white/30 text-xs">Анализ трат + подбор кэшбэка</p>
+                <p className="text-white font-bold text-sm">{t.importStatement}</p>
+                <p className="text-white/30 text-xs">{t.cashbackAnalysis} + {t.importStatement?.toLowerCase()}</p>
               </div>
             </div>
             <button onClick={onClose}
@@ -894,7 +859,7 @@ export default function ImportStatementModal({ userId, demo = false, onImported,
               ✕
             </button>
           </div>
-          <StepIndicator step={step} />
+          <StepIndicator step={step} t={t} />
         </div>
 
         {/* Scrollable content */}
@@ -906,6 +871,7 @@ export default function ImportStatementModal({ userId, demo = false, onImported,
               setLoading={setLoading}
               error={error}
               setError={setError}
+              t={t}
             />
           )}
           {step === 1 && parsed && (
@@ -915,6 +881,8 @@ export default function ImportStatementModal({ userId, demo = false, onImported,
               onCashback={() => setStep(3)}
               onSave={() => setStep(2)}
               onBack={() => { setParsed(null); setStep(0) }}
+              t={t}
+              lang={lang}
             />
           )}
           {step === 2 && parsed && (
@@ -925,12 +893,16 @@ export default function ImportStatementModal({ userId, demo = false, onImported,
               onImported={onImported}
               onCashback={() => setStep(3)}
               onBack={() => setStep(1)}
+              t={t}
+              lang={lang}
             />
           )}
           {step === 3 && parsed && (
             <StepCashback
               stats={parsed.stats}
               onBack={() => setStep(1)}
+              t={t}
+              lang={lang}
             />
           )}
         </div>

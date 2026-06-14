@@ -18,6 +18,7 @@ function BankBadge({ name, logoColor, className }) {
 
 // Visual Composition Component (Floating Cards, Widgets, and SVG Chart)
 function VisualComposition() {
+  const lt = useLanding()
   return (
     <div className="relative mx-auto h-[480px] w-full max-w-[480px] xl:max-w-[520px]">
       {/* ── Soft glowing background blobs matching project colors ── */}
@@ -76,20 +77,20 @@ function VisualComposition() {
               </span>
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">AI Insight</span>
             </div>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600">Активно</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600">{lt.heroAiActive ?? 'Активно'}</span>
           </div>
 
           <div className="mt-2.5">
             <p className="text-[13px] font-bold text-slate-800 leading-snug">
-              Найдено <span className="text-[#059669]">183 000 ₸</span> неиспользованного кэшбека
+              {lt.heroAiFound?.replace('{amount}', '183 000 ₸') ?? 'Найдено 183 000 ₸ неиспользованного кэшбека'}
             </p>
             <p className="mt-1 text-[11px] font-medium text-slate-400">
-              Kaspi Business → переведите ФОТ на Freedom Bank
+              {lt.heroAiTip ?? 'Kaspi Business → переведите ФОТ на Freedom Bank'}
             </p>
           </div>
 
           <button className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[#38bdf8] to-[#34d399] py-2 text-xs font-bold text-white shadow-md transition-all duration-300 hover:brightness-105 hover:shadow-lg active:scale-98">
-            <span>Применить оптимизацию</span>
+            <span>{lt.heroAiApply ?? 'Применить оптимизацию'}</span>
             <IconArrowUpRight className="h-3 w-3" />
           </button>
         </div>
@@ -98,7 +99,7 @@ function VisualComposition() {
         <div className="float-card-c absolute left-[2%] bottom-[6%] z-30 w-[270px] sm:w-[290px] rounded-2xl border border-white/50 bg-white/85 p-4 shadow-[0_28px_56px_-22px_rgba(15,72,154,0.22)] backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:bg-white/95">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Прогноз Cash Flow</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{lt.forecastSubtitle ?? 'Прогноз Cash Flow'}</p>
               <h4 className="text-lg font-black tracking-tight text-slate-800 mt-0.5">₸ 5 412 000</h4>
             </div>
             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
@@ -149,9 +150,9 @@ function VisualComposition() {
           </div>
           
           <div className="mt-2.5 flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-            <span>1 Мая</span>
-            <span>15 Мая</span>
-            <span>30 Мая (Прогноз)</span>
+            <span>{lt.lang === 'ru' ? '1 Мая' : (lt.lang === 'kz' ? '1 Мамыр' : 'May 1')}</span>
+            <span>{lt.lang === 'ru' ? '15 Мая' : (lt.lang === 'kz' ? '15 Мамыр' : 'May 15')}</span>
+            <span>{lt.lang === 'ru' ? '30 Мая (Прогноз)' : (lt.lang === 'kz' ? '30 Мамыр (Болжам)' : 'May 30 (Forecast)')}</span>
           </div>
         </div>
 

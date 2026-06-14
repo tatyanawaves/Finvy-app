@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import LocalizedDatePicker from '../../components/LocalizedDatePicker'
 
 const STATUS_STYLES = {
   paid:    'bg-mint/10 text-mint',
@@ -87,13 +88,20 @@ function NewInvoiceModal({ userId, onClose, onSaved, t }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-white/40 text-xs mb-1.5 block">{t.issueDate}</label>
-              <input type="date" value={form.issue_date} onChange={e => set('issue_date', e.target.value)} className={`${inputClass} [color-scheme:dark]`} />
+              <LocalizedDatePicker
+                value={form.issue_date}
+                onChange={v => set('issue_date', v)}
+              />
             </div>
             <div>
               <label className="text-white/40 text-xs mb-1.5 block">{t.dueDate}</label>
-              <input type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} className={`${inputClass} [color-scheme:dark]`} />
+              <LocalizedDatePicker
+                value={form.due_date}
+                onChange={v => set('due_date', v)}
+              />
             </div>
           </div>
+
           <div>
             <label className="text-white/40 text-xs mb-1.5 block">{t.status}</label>
             <select value={form.status} onChange={e => set('status', e.target.value)} className={`${inputClass} cursor-pointer`}>

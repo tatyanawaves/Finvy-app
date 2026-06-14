@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import { useAuth } from '../../context/AuthContext'
@@ -86,6 +86,13 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
     </div>
   )
 
+  const statusLabels = {
+    trialing: t.trial,
+    active: t.active,
+    past_due: t.pastDue,
+    canceled: t.canceled
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-lg mx-auto px-4 sm:px-6 py-5 sm:py-6">
@@ -126,10 +133,10 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
                 />
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Тип профиля</label>
+                <label className="text-white/40 text-xs mb-1.5 block">{t.profileTypeLabel}</label>
                 <div className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/65">
-                  {profileType === 'personal' ? 'Физ. лицо' : 'Бизнес'}
-                  <span className="block text-[11px] text-white/30 mt-0.5">Выбирается один раз в первом опроснике</span>
+                  {profileType === 'personal' ? (t.personal || 'Personal') : (t.business || 'Business')}
+                  <span className="block text-[11px] text-white/30 mt-0.5">{t.profileTypeDesc}</span>
                 </div>
               </div>
             </div>
@@ -195,46 +202,42 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
           {/* Subscription section */}
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">
-              {lang === 'en' ? 'Subscription' : 'Подписка'}
+              {t.subscription}
             </p>
             {subscription ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-xs">{lang === 'en' ? 'Plan' : 'Тариф'}</span>
+                  <span className="text-white/40 text-xs">{t.plan}</span>
                   <span className="text-white text-sm font-semibold capitalize">{subscription.plan_id}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-xs">{lang === 'en' ? 'Status' : 'Статус'}</span>
+                  <span className="text-white/40 text-xs">{t.status}</span>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                     isActive ? 'bg-mint/20 text-mint' : 'bg-red-500/20 text-red-400'
                   }`}>
-                    {subscription.status === 'trialing' ? (lang === 'en' ? 'Trial' : 'Пробный период') :
-                     subscription.status === 'active' ? (lang === 'en' ? 'Active' : 'Активна') :
-                     subscription.status === 'past_due' ? (lang === 'en' ? 'Past Due' : 'Просрочена') :
-                     subscription.status === 'canceled' ? (lang === 'en' ? 'Canceled' : 'Отменена') :
-                     subscription.status}
+                    {statusLabels[subscription.status] || subscription.status}
                   </span>
                 </div>
                 {subscription.trial_end && isTrialing && (
                   <div className="flex items-center justify-between">
-                    <span className="text-white/40 text-xs">{lang === 'en' ? 'Trial ends' : 'Триал до'}</span>
+                    <span className="text-white/40 text-xs">{t.trialEnds}</span>
                     <span className="text-white/70 text-xs">{new Date(subscription.trial_end).toLocaleDateString()}</span>
                   </div>
                 )}
                 {subscription.current_period_end && (
                   <div className="flex items-center justify-between">
-                    <span className="text-white/40 text-xs">{lang === 'en' ? 'Next billing' : 'Следующее списание'}</span>
+                    <span className="text-white/40 text-xs">{t.nextBilling}</span>
                     <span className="text-white/70 text-xs">{new Date(subscription.current_period_end).toLocaleDateString()}</span>
                   </div>
                 )}
                 <button type="button" onClick={openPortal}
                   className="w-full mt-2 py-2.5 rounded-lg text-xs font-medium bg-white/5 text-white/60 border border-white/10 hover:text-white hover:border-white/20 transition-colors">
-                  {lang === 'en' ? 'Manage Subscription' : 'Управление подпиской'}
+                  {t.manageSubscription}
                 </button>
               </div>
             ) : (
               <p className="text-white/30 text-xs">
-                {lang === 'en' ? 'No active subscription' : 'Нет активной подписки'}
+                {t.noActiveSubscription}
               </p>
             )}
           </div>
@@ -242,15 +245,41 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
           {/* Integration section */}
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">
-              {lang === 'en' ? 'Integrations' : 'Интеграции'}
+              {t.integrations}
             </p>
             <button type="button" onClick={async () => {
-              const token = crypto.randomUUID();
-              await supabase.from('telegram_auth_tokens').insert({ token, user_id: userId });
-              window.open(`https://t.me/finvy_finance_bot?start=${token}`, '_blank');
+              try {
+                const token = crypto.randomUUID();
+                const targetUserId = userId || user?.id;
+                
+                if (!targetUserId) {
+                  alert('Error: User ID not found. Please refresh and try again.');
+                  return;
+                }
+
+                console.log('Generating Telegram token for user:', targetUserId, 'Language:', lang);
+                const { error } = await supabase
+                  .from('telegram_users_links')
+                  .upsert({ 
+                    token, 
+                    user_id: targetUserId,
+                    language: lang || 'ru' 
+                  });
+
+                if (error) {
+                  console.error('Failed to create Telegram token:', error);
+                  alert(`Error linking Telegram: ${error.message}`);
+                  return;
+                }
+
+                window.open(`https://t.me/finvy_finance_bot?start=${token}`, '_blank');
+              } catch (err) {
+                console.error('Telegram link exception:', err);
+                alert(`Exception linking Telegram: ${err.message}`);
+              }
             }}
               className="w-full py-2.5 rounded-lg text-xs font-medium bg-mint/10 text-mint border border-mint/20 hover:bg-mint/20 transition-colors">
-              {lang === 'en' ? 'Link Telegram Bot' : 'Привязать Telegram-бота'}
+              {t.linkTelegramBot}
             </button>
           </div>
 
