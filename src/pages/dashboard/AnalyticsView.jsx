@@ -45,7 +45,11 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-const fmtMoney = (value) => `${Math.round(Math.abs(value || 0)).toLocaleString('ru-RU')} ₸`
+const fmtMoney = (value) => {
+  const symbol = window.finvyCurrencySymbol?.(window.finvyDefaultCurrency || 'KZT') || '₸';
+  const formattedValue = Math.round(Math.abs(value || 0)).toLocaleString('ru-RU');
+  return (symbol === '₸' || symbol === '₽') ? `${formattedValue} ${symbol}` : `${symbol}${formattedValue}`;
+}
 
 function CashflowForecastCard({ forecast, profileType = 'business', t }) {
   if (!forecast) return null

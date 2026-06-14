@@ -10,7 +10,12 @@ import { useLanguage } from '../../context/LanguageContext'
 import { useBudget, currentMonthKey, shiftMonth, rolloverMonth } from '../../hooks/useBudget'
 import { generateBudgetProposal, applyBudgetProposal } from '../../lib/budgetAI'
 
-const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU')
+const fmt = (n) => {
+  const currency = window.finvyDefaultCurrency || 'KZT';
+  const symbol = window.finvyCurrencySymbol?.(currency) || '₸';
+  const val = Math.round(Number(n) || 0).toLocaleString('ru-RU');
+  return (symbol === '₸' || symbol === '₽') ? `${val} ${symbol}` : `${symbol}${val}`;
+}
 
 function formatMonthLabel(monthKey, t) {
   // monthKey: 'YYYY-MM'
@@ -60,7 +65,7 @@ function BudgetRow({ row, onEdit, onDelete, t }) {
             )}
           </div>
           <p className="text-white/40 text-xs mt-0.5">
-            {fmt(spent)} ₸ {t.fromLabel || 'из'} {unbudgeted ? '—' : fmt(cap)}{cap > 0 && ` ₸`}
+            {fmt(spent)} {t.fromLabel || 'из'} {unbudgeted ? '—' : fmt(cap)}
           </p>
         </div>
 
@@ -408,22 +413,22 @@ export default function BudgetView({ userId, profileType = 'business' }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           <SummaryCard
             label={t.income || 'Доход'}
-            value={`${fmt(monthIncome)} ₸`}
+            value={fmt(monthIncome)}
             tone="neutral"
           />
           <SummaryCard
             label={t.planned || 'Запланировано'}
-            value={`${fmt(totals.planned)} ₸`}
+            value={fmt(totals.planned)}
             tone="neutral"
           />
           <SummaryCard
             label={t.spent || 'Потрачено'}
-            value={`${fmt(totals.spent)} ₸`}
+            value={fmt(totals.spent)}
             tone="neutral"
           />
           <SummaryCard
             label={totals.remaining >= 0 ? (t.remainingTotal || 'Осталось всего') : (t.overrun || 'Перерасход')}
-            value={`${totals.remaining >= 0 ? '' : '−'}${fmt(Math.abs(totals.remaining))} ₸`}
+            value={`${totals.remaining >= 0 ? '' : '−'}${fmt(Math.abs(totals.remaining))}`}
             tone={totals.remaining >= 0 ? 'mint' : 'red'}
           />
         </div>
@@ -439,11 +444,11 @@ export default function BudgetView({ userId, profileType = 'business' }) {
           }`}>
             <p className="text-xs sm:text-sm">
               {toBudget > 0 && (<>
-                <span className="font-bold">{t.toBudgetLabel || 'К распределению'}: {fmt(toBudget)} ₸</span>
+                <span className="font-bold">{t.toBudgetLabel || 'К распределению'}: {fmt(toBudget)}</span>
                 <span className="text-white/50 ml-2">{t.assignToCategories || '— назначь их на категории, чтобы каждый тенге имел работу'}</span>
               </>)}
               {toBudget < 0 && (<>
-                <span className="font-bold">{t.overBudget || 'Перебюджетировано'}: {fmt(Math.abs(toBudget))} ₸</span>
+                <span className="font-bold">{t.overBudget || 'Перебюджетировано'}: {fmt(Math.abs(toBudget))}</span>
                 <span className="text-white/50 ml-2">{t.plansExceedIncome || '— планы превышают доход; убавь лимиты в категориях'}</span>
               </>)}
               {toBudget === 0 && <span className="font-medium">{t.budgetBalanced || 'Бюджет сбалансирован — каждый тенге распределён.'}</span>}

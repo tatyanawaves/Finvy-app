@@ -172,7 +172,11 @@ function computeInsights(txs, lang) {
 }
 
 function fmtAmt(n) {
-  return '₸' + Math.round(n).toLocaleString('ru')
+  const currency = window.finvyDefaultCurrency || 'KZT';
+  const symbol = window.finvyCurrencySymbol?.(currency) || '₸';
+  return (symbol === '₸' || symbol === '₽') 
+    ? Math.round(n).toLocaleString('ru') + ' ' + symbol
+    : symbol + Math.round(n).toLocaleString('ru');
 }
 
 function createLocalAIReply(question, txs, accounts, lang, plannedOps = []) {
@@ -417,7 +421,12 @@ export default function AIAnalyticsView({ userId, profileType = 'business' }) {
       catMap[t.category || 'Other'] = (catMap[t.category || 'Other'] || 0) + Math.abs(t.amount || 0)
     })
     const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    const amount = (value) => `${Math.round(value).toLocaleString('ru-RU')} ₸`
+    const currency = window.finvyDefaultCurrency || 'KZT';
+    const symbol = window.finvyCurrencySymbol?.(currency) || '₸';
+    const amount = (value) => {
+      const val = Math.round(value).toLocaleString('ru-RU');
+      return (symbol === '₸' || symbol === '₽') ? `${val} ${symbol}` : `${symbol}${val}`;
+    }
     const topCategoryText = topCats.map(([k, v]) => `${k} (${amount(v)})`).join(', ')
     const accountText = accounts.map(a => `${a.name} (${amount(a.balance || 0)})`).join(', ')
     const planned = summarizePlannedOperations(plannedOps)

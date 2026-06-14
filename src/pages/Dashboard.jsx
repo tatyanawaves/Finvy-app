@@ -179,7 +179,17 @@ function DashboardInner() {
     }
   }, [isPersonalProfile, currentTab, navigate])
 
-  const currencySymbol = (c) => ({ USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }[c] || c)
+  const currencySymbol = (c) => ({ 
+    USD: '$', 
+    EUR: '€', 
+    KZT: '₸', 
+    UAH: '₴', 
+    GBP: '£',
+    RUB: '₽'
+  }[c] || c)
+  
+  window.finvyCurrencySymbol = currencySymbol; 
+  window.finvyDefaultCurrency = defaultCurrency; // Sync the current currency
   const scrollTabs = (direction) => {
     tabsScrollRef.current?.scrollBy({ left: direction * 220, behavior: 'smooth' })
   }
