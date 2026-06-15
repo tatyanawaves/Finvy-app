@@ -33,12 +33,14 @@ function BudgetRow({ row, onEdit, onDelete, t }) {
   const pct = Math.min(100, Math.round(percentUsed * 100))
 
   const barColor =
-    status === 'over' ? 'bg-red-500'
+    unbudgeted ? 'bg-white/10'
+    : status === 'over' ? 'bg-red-500'
     : status === 'warning' ? 'bg-amber-400'
     : 'bg-mint'
 
   const remColor =
-    status === 'over' ? 'text-red-400'
+    unbudgeted ? 'text-white/40'
+    : status === 'over' ? 'text-red-400'
     : status === 'warning' ? 'text-amber-400'
     : 'text-mint'
 
@@ -50,8 +52,8 @@ function BudgetRow({ row, onEdit, onDelete, t }) {
           <div className="flex items-center gap-2">
             <p className="text-white/90 font-medium text-sm truncate">{category}</p>
             {unbudgeted && (
-              <span className="text-[10px] uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">
-                {t.noLimit || 'нет лимита'}
+              <span className="text-[10px] uppercase tracking-wider text-white/30 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">
+                {t.noLimit || 'без лимита'}
               </span>
             )}
             {rolloverIn !== 0 && (
@@ -74,19 +76,19 @@ function BudgetRow({ row, onEdit, onDelete, t }) {
           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
             <div
               className={`h-full ${barColor} transition-all duration-500`}
-              style={{ width: `${pct}%` }}
+              style={{ width: unbudgeted ? '0%' : `${pct}%` }}
             />
           </div>
-          <p className="text-[10px] text-white/30 mt-1 tabular-nums">{pct}%</p>
+          <p className="text-[10px] text-white/30 mt-1 tabular-nums">{unbudgeted ? '—' : `${pct}%`}</p>
         </div>
 
         {/* Remaining */}
         <div className="text-right flex-shrink-0 min-w-[110px]">
           <p className={`font-bold text-sm tabular-nums ${remColor}`}>
-            {remaining >= 0 ? '' : '−'}{fmt(Math.abs(remaining))} ₸
+            {unbudgeted ? fmt(spent) : (remaining >= 0 ? '' : '−') + fmt(Math.abs(remaining))} ₸
           </p>
           <p className="text-[10px] text-white/30 mt-0.5">
-            {remaining >= 0 ? (t.remaining || 'осталось') : (t.overrun || 'перерасход')}
+            {unbudgeted ? (t.spent || 'потрачено') : (remaining >= 0 ? (t.remaining || 'осталось') : (t.overrun || 'перерасход'))}
           </p>
         </div>
 

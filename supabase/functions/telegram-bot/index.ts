@@ -123,17 +123,27 @@ serve(async (req) => {
         const index = parseInt(text.split(' ')[1]) - 1;
         const { data: txs } = await supabase
           .from('transactions')
-          .select('id')
+          .select('id, amount, type, accountId')
           .eq('user_id', user.user_id)
           .order('date', { ascending: false })
           .limit(5);
 
         if (txs && txs[index]) {
-          await supabase.from('transactions').delete().eq('id', txs[index].id);
+          const tx = txs[index]
+          // Restore balance
+          if (tx.accountId) {
+            const { data: acc } = await supabase.from('accounts').select('balance').eq('id', tx.accountId).maybeSingle()
+            if (acc) {
+              const delta = tx.type === 'income' ? -tx.amount : tx.amount
+              await supabase.from('accounts').update({ balance: (acc.balance || 0) + delta }).eq('id', tx.accountId)
+            }
+          }
+
+          await supabase.from('transactions').delete().eq('id', tx.id);
           await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: '✅ Транзакция удалена.' })
+            body: JSON.stringify({ chat_id: chatId, text: '✅ Транзакция удалена, баланс счета восстановлен.' })
           });
         } else {
           await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {

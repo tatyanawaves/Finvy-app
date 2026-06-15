@@ -145,7 +145,8 @@ export default function CategoriesView({ userId }) {
 
   useEffect(() => { fetchCategories() }, [fetchCategories])
 
-  const deleteCategory = async (id) => {
+  const deleteCategory = async (id, name) => {
+    if (!confirm(t.confirmDeleteCategory || `Удалить категорию "${name}"?`)) return
     await supabase.from('fm_categories').delete().eq('id', id)
     setCategories(prev => prev.filter(c => c.id !== id))
   }
@@ -206,7 +207,7 @@ export default function CategoriesView({ userId }) {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {grouped.income.map(cat => (
-                    <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id)} t={t} />
+                    <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id, cat.name)} t={t} />
                   ))}
                 </div>
               </div>
@@ -220,7 +221,7 @@ export default function CategoriesView({ userId }) {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {grouped.expense.map(cat => (
-                    <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id)} t={t} />
+                    <CategoryCard key={cat.id} cat={cat} onEdit={() => { setEditing(cat); setShowModal(true) }} onDelete={() => deleteCategory(cat.id, cat.name)} t={t} />
                   ))}
                 </div>
               </div>

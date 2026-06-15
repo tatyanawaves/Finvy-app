@@ -242,46 +242,6 @@ export default function SettingsView({ userId, profileType = 'business', onSave,
             )}
           </div>
 
-          {/* Save button */}
-          <button type="submit" disabled={saving}
-            className={`w-full py-3 rounded-xl text-sm font-bold transition-all ${
-              saved
-                ? 'bg-mint/20 text-mint border border-mint/30'
-                : 'bg-mint text-dark hover:bg-mint/90'
-            } disabled:opacity-50`}>
-            {saved ? `✓ ${t.settingsSaved}` : saving ? t.saving : t.saveSettings}
-          </button>
-        </form>
-
-        {/* Danger zone */}
-        <div className="mt-8 bg-red-500/[0.03] border border-red-500/10 rounded-2xl p-5">
-          <p className="text-red-400/70 text-xs font-semibold uppercase tracking-wider mb-3">{t.dangerZone}</p>
-          <p className="text-white/30 text-xs mb-3">{t.deleteAccountDesc}</p>
-          <button className="text-red-400/60 hover:text-red-400 text-xs font-medium border border-red-500/20 hover:border-red-500/40 px-4 py-2 rounded-lg transition-colors">
-            {t.deleteAccount}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-lex items-center justify-between">
-                    <span className="text-white/40 text-xs">{t.nextBilling}</span>
-                    <span className="text-white/70 text-xs">{new Date(subscription.current_period_end).toLocaleDateString()}</span>
-                  </div>
-                )}
-                <button type="button" onClick={openPortal}
-                  className="w-full mt-2 py-2.5 rounded-lg text-xs font-medium bg-white/5 text-white/60 border border-white/10 hover:text-white hover:border-white/20 transition-colors">
-                  {t.manageSubscription}
-                </button>
-              </div>
-            ) : (
-              <p className="text-white/30 text-xs">
-                {t.noActiveSubscription}
-              </p>
-            )}
-          </div>
-
           {/* Integration section */}
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-4">
