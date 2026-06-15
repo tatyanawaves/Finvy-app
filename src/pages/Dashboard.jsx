@@ -83,7 +83,7 @@ function DashboardInner() {
   const auth = useAuth()
   const user = auth.user
   const signOut = auth.signOut
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [accounts, setAccounts] = useState([])
