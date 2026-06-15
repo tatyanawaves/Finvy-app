@@ -522,6 +522,11 @@ const translations = {
     validAmount: 'Дұрыс соманы енгізіңіз',
     servicesRendered: 'Көрсетілген қызметтер',
     yourCompany: 'Сіздің компанияңыз',
+    integrations: 'Интеграциялар',
+    linkTelegramBot: 'Telegram-ботты байланыстыру',
+    recurring: 'Тұрақты төлемдер',
+    recurringSubtitle: 'Жазылымдар мен тұрақты шығындарды басқарыңыз',
+    addRecurring: 'Төлем қосу',
 
     // ── Budget Widget ──
     personalBudget: 'Жеке бюджет',

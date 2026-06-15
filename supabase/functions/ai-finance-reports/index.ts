@@ -39,6 +39,9 @@ serve(async (req) => {
       // 3. Goals status
       const { data: goals } = await supabase.from('savings_goals').select('*').eq('user_id', user.user_id)
 
+      // 3.5 Debts status
+      const { data: debts } = await supabase.from('debts').select('*').eq('user_id', user.user_id)
+
       // 4. Monthly analytics (if it's 1st of month)
       let monthlyStats = ""
       if (isFirstOfMonth) {
@@ -58,12 +61,14 @@ serve(async (req) => {
         Today's Expense: ${expense} ${currencySymbol}
         Reminders for today: ${JSON.stringify(reminders)}
         Goals: ${JSON.stringify(goals)}
+        Current Debts (Я должен/Мне должны): ${JSON.stringify(debts)}
         ${monthlyStats}
         
         Guidelines:
         - Be professional and encouraging.
         - Start all descriptions and names with a CAPITAL LETTER.
-        - Mention mandatory payments if any.
+        - Explicitly state how much was "Received" and "Spent" today in separate clear lines.
+        - Mention mandatory payments and upcoming debts if any.
         - Summarize savings progress.
         - ALWAYS USE ${currencySymbol} FOR AMOUNTS.
       `
@@ -79,6 +84,18 @@ serve(async (req) => {
 
       const aiData = await aiRes.json()
       const report = aiData.choices?.[0]?.message?.content || "Report error"
+
+      // Save to monthly_reports if it's the 1st of the month
+      if (isFirstOfMonth) {
+        const lastMonth = new Date()
+        lastMonth.setMonth(lastMonth.getMonth() - 1)
+        const period = lastMonth.toLocaleString(userLang, { month: 'long', year: 'numeric' })
+        await supabase.from('monthly_reports').insert({
+          user_id: user.user_id,
+          period: period,
+          content: report
+        })
+      }
 
       await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         method: 'POST',

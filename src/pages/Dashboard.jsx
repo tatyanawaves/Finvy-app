@@ -14,6 +14,8 @@ import SettingsView from './dashboard/SettingsView'
 import AIAnalyticsView from './dashboard/AIAnalyticsView'
 import BudgetView from './dashboard/BudgetView'
 import GoalsView from './dashboard/GoalsView'
+import RecurringView from './dashboard/RecurringView'
+import DebtsView from './dashboard/DebtsView'
 import AddTransactionModal from './dashboard/AddTransactionModal'
 import AddAccountModal from './dashboard/AddAccountModal'
 import OnboardingSurvey from './dashboard/OnboardingSurvey'
@@ -163,6 +165,8 @@ function DashboardInner() {
     { key: 'analytics',   label: t.analytics || 'Аналитика',     path: `${base}/analytics` },
     { key: 'ai',          label: `✦ ${t.aiAnalytics || 'AI'}`, path: `${base}/ai` },
     { key: 'calendar',    label: t.calendar || 'Календарь',       path: `${base}/calendar` },
+    { key: 'recurring',   label: t.recurring || 'Регулярные',     path: `${base}/recurring` },
+    { key: 'debts',       label: t.debtsTitle || 'Долги',         path: `${base}/debts` },
     { key: 'invoices',    label: t.invoices || 'Счета',       path: `${base}/invoices`, businessOnly: true },
     { key: 'reports',     label: t.reports || 'Отчёты',        path: `${base}/reports` },
     { key: 'taxes',       label: t.taxes || 'Налоги', path: `${base}/taxes`, businessOnly: true },
@@ -226,8 +230,9 @@ function DashboardInner() {
         {/* Total balance */}
         <div className="px-5 py-4 border-b border-white/5">
           <p className="text-white/40 text-xs mb-1">{t.totalBalance}</p>
-          <p className="text-white text-xl font-bold">
-            {currencySymbol(defaultCurrency)}{' '}{totalBalance.toLocaleString('en', { maximumFractionDigits: 2 })}
+          <p className="text-white text-xl font-bold tabular-nums">
+            {(totalBalance || 0).toLocaleString(lang === 'kz' ? 'kk-KZ' : 'ru-RU', { maximumFractionDigits: 0 })}{' '}
+            <span className="text-white/40 text-sm font-medium">{currencySymbol(defaultCurrency)}</span>
           </p>
           <p className="text-white/20 text-[10px] mt-0.5">{defaultCurrency}</p>
         </div>
@@ -255,8 +260,9 @@ function DashboardInner() {
                   }`} />
                   <span className="text-white/70 text-xs group-hover:text-white transition-colors truncate max-w-[90px]">{acc.name}</span>
                 </div>
-                <span className="text-white/50 text-xs">
-                  {currencySymbol(acc.currency)}{' '}{(acc.balance || 0).toLocaleString('en', { maximumFractionDigits: 0 })}
+                <span className="text-white/50 text-xs tabular-nums">
+                  {(acc.balance || 0).toLocaleString(lang === 'kz' ? 'kk-KZ' : 'ru-RU', { maximumFractionDigits: 0 })}{' '}
+                  {currencySymbol(acc.currency)}
                 </span>
               </div>
             ))}
@@ -356,6 +362,8 @@ function DashboardInner() {
             <Route path="goals" element={<GoalsView userId={user.id} profileType={profileType} />} />
             <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} accounts={accounts} profileType={profileType} />} />
             <Route path="calendar" element={<CalendarView userId={user.id} />} />
+            <Route path="recurring" element={<RecurringView userId={user.id} />} />
+            <Route path="debts" element={<DebtsView userId={user.id} />} />
             <Route path="users" element={<UsersView />} />
             <Route path="invoices" element={<InvoicesView userId={user.id} currency={defaultCurrency} />} />
             <Route path="categories" element={<CategoriesView userId={user.id} profileType={profileType} />} />
