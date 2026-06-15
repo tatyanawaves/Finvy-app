@@ -78,17 +78,21 @@ serve(async (req) => {
       const currentLangName = langNames[userLang] || 'Russian';
 
       // Собираем контекст для ответов на вопросы о положении
+      const { data: accounts } = await supabase.from('accounts').select('id, name, balance, currency').eq('user_id', user.user_id)
       const { data: balance } = await supabase.rpc('get_user_balance', { p_user_id: user.user_id })
       const { data: recentTransactions } = await supabase.from('transactions').select('*').eq('user_id', user.user_id).order('date', { ascending: false }).limit(5)
       const { data: goals } = await supabase.from('savings_goals').select('*').eq('user_id', user.user_id)
       const { data: debts } = await supabase.from('debts').select('*').eq('user_id', user.user_id)
+      const { data: categories } = await supabase.from('fm_categories').select('name, type').eq('user_id', user.user_id)
 
       const financialContext = `
+        Accounts: ${JSON.stringify(accounts)}
         Current Balance: ${balance || 0} ${userCurrency}
         User's Default Currency: ${userCurrency}
         Recent transactions: ${JSON.stringify(recentTransactions)}
         Savings goals: ${JSON.stringify(goals)}
-        Current Debts (Я должен/Мне должны): ${JSON.stringify(debts)}
+        Current Debts: ${JSON.stringify(debts)}
+        Available Categories: ${categories?.map(c => `${c.name} (${c.type})`).join(', ')}
       `
 
       // Command: /last
@@ -163,6 +167,8 @@ serve(async (req) => {
               IMPORTANT RULES:
               - Always start "description", "goal_name", and "category" with a CAPITAL LETTER.
               - "account_name" MUST match one of the user's accounts if mentioned in text.
+              - "category" MUST be one of the available categories if it fits, otherwise pick a suitable name.
+              - Available categories: ${categories?.map(c => `${c.name} (${c.type})`).join(', ')}.
               - Available accounts: ${accounts?.map(a => a.name).join(', ')}.
               - Use currency: ${userCurrency} (${currencySymbol}).
               - Use language: ${currentLangName}.
@@ -190,6 +196,13 @@ serve(async (req) => {
             const finalDesc = (aiData.description || text).trim()
             const capitalizedDesc = finalDesc.charAt(0).toUpperCase() + finalDesc.slice(1)
             
+            // Try to find category match
+            let targetCategory = aiData.category || 'Прочее'
+            if (aiData.category && categories) {
+              const match = categories.find(c => c.name.toLowerCase() === aiData.category.toLowerCase())
+              if (match) targetCategory = match.name
+            }
+
             // Try to find account by name from AI
             let targetAccount = null
             if (aiData.account_name) {
@@ -204,7 +217,7 @@ serve(async (req) => {
                 type: aiData.type || 'expense',
                 amount: aiData.amount,
                 description: capitalizedDesc,
-                category: aiData.category || 'Telegram',
+                category: targetCategory,
                 date: new Date().toISOString().slice(0, 10)
               }).select().single()
 
@@ -235,7 +248,7 @@ serve(async (req) => {
               type: aiData.type || 'expense',
               amount: aiData.amount,
               description: capitalizedDesc,
-              category: aiData.category || 'Telegram',
+              category: targetCategory,
               date: new Date().toISOString().slice(0, 10),
               accountId: accountId
             })
@@ -246,7 +259,7 @@ serve(async (req) => {
               await supabase.from('accounts').update({ balance: (acc.balance || 0) + delta }).eq('id', accountId)
             }
 
-            reply = insErr ? `❌ Ошибка БД: ${insErr.message}` : `✅ Добавлено на счет ${targetAccount?.name || accounts?.[0]?.name || ''}: ${capitalizedDesc} (${aiData.amount} ${currencySymbol})`
+            reply = insErr ? `❌ Ошибка БД: ${insErr.message}` : `✅ Добавлено [${targetCategory}]: ${capitalizedDesc} (${aiData.amount} ${currencySymbol})`
             
           } else if (aiData.action === 'goal_deposit') {
             const { data: goal } = await supabase.from('savings_goals').select('id, saved_amount, name').eq('user_id', user.user_id).ilike('name', `%${aiData.goal_name}%`).maybeSingle()
