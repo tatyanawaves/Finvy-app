@@ -13,8 +13,39 @@ serve(async (req) => {
     const payload = await req.json()
     if (!payload.message || !payload.message.chat) return new Response(JSON.stringify({ ok: true }))
 
-    const chatId = payload.message.chat.id.toString()
-    const text = payload.message.text || ''
+    const chatId = payload.message?.chat?.id?.toString() || payload.callback_query?.message?.chat?.id?.toString()
+    const text = payload.message?.text || ''
+    const callbackData = payload.callback_query?.data
+
+    if (!chatId) return new Response(JSON.stringify({ ok: true }))
+
+    // 0. Handle account selection callbacks
+    if (callbackData?.startsWith('select_account_')) {
+      const [_, txId, accountId] = callbackData.split('_').slice(1) // select_account_TXID_ACCID
+      
+      const { data: tx } = await supabase.from('transactions').select('*').eq('id', txId).maybeSingle()
+      if (tx) {
+        await supabase.from('transactions').update({ accountId }).eq('id', txId)
+        
+        // Update account balance
+        const { data: acc } = await supabase.from('accounts').select('balance, name').eq('id', accountId).maybeSingle()
+        if (acc) {
+          const delta = tx.type === 'income' ? tx.amount : -tx.amount
+          await supabase.from('accounts').update({ balance: (acc.balance || 0) + delta }).eq('id', accountId)
+          
+          await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              chat_id: chatId, 
+              message_id: payload.callback_query.message.message_id,
+              text: `✅ Транзакция "${tx.description}" (${tx.amount} ₸) привязана к счету: ${acc.name}` 
+            })
+          })
+        }
+      }
+      return new Response(JSON.stringify({ ok: true }))
+    }
 
     // 1. Привязка аккаунта
     if (text.startsWith('/start ')) {
@@ -122,13 +153,17 @@ serve(async (req) => {
               
               If the user wants to record a transaction or goal, ALWAYS return ONLY JSON.
               JSON formats:
-              1. Transaction: {"action":"transaction","amount":number,"description":"string","type":"expense"|"income","category":"string"}
+              1. Transaction: {"action":"transaction","amount":number,"description":"string","type":"expense"|"income","category":"string","account_name":"string"}
               2. Goal Deposit: {"action":"goal_deposit","amount":number,"goal_name":"string"}
               3. Goal Create: {"action":"goal_create","target_amount":number,"goal_name":"string"}
               4. Budget: {"action":"budget_create","amount":number,"category":"string"}
+              5. Debt Create: {"action":"debt_create","amount":number,"person":"string","type":"owe_them"|"they_owe","description":"string"}
+              6. Debt Pay: {"action":"debt_pay","amount":number,"person":"string"}
               
               IMPORTANT RULES:
               - Always start "description", "goal_name", and "category" with a CAPITAL LETTER.
+              - "account_name" MUST match one of the user's accounts if mentioned in text.
+              - Available accounts: ${accounts?.map(a => a.name).join(', ')}.
               - Use currency: ${userCurrency} (${currencySymbol}).
               - Use language: ${currentLangName}.
               
@@ -152,10 +187,48 @@ serve(async (req) => {
           const aiData = JSON.parse(jsonMatch[0])
           
           if (aiData.action === 'transaction') {
-            const { data: accounts } = await supabase.from('accounts').select('id').eq('user_id', user.user_id).limit(1)
-
             const finalDesc = (aiData.description || text).trim()
             const capitalizedDesc = finalDesc.charAt(0).toUpperCase() + finalDesc.slice(1)
+            
+            // Try to find account by name from AI
+            let targetAccount = null
+            if (aiData.account_name) {
+              targetAccount = accounts?.find(a => a.name.toLowerCase().includes(aiData.account_name.toLowerCase()))
+            }
+
+            // If account is still not found and we have multiple accounts, ask user
+            if (!targetAccount && accounts?.length > 1) {
+              // Create transaction without accountId first
+              const { data: newTx } = await supabase.from('transactions').insert({
+                user_id: user.user_id,
+                type: aiData.type || 'expense',
+                amount: aiData.amount,
+                description: capitalizedDesc,
+                category: aiData.category || 'Telegram',
+                date: new Date().toISOString().slice(0, 10)
+              }).select().single()
+
+              if (newTx) {
+                const buttons = accounts.map(acc => ([{
+                  text: `${acc.name} (${acc.balance} ${acc.currency})`,
+                  callback_data: `select_account_${newTx.id}_${acc.id}`
+                }]))
+
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    chat_id: chatId, 
+                    text: `На какой счет записать "${capitalizedDesc}" (${aiData.amount} ₸)?`,
+                    reply_markup: { inline_keyboard: buttons }
+                  })
+                })
+                return new Response(JSON.stringify({ ok: true }))
+              }
+            }
+
+            // Default to first account if only one or if explicitly found
+            const accountId = targetAccount?.id || accounts?.[0]?.id
 
             const { error: insErr } = await supabase.from('transactions').insert({
               user_id: user.user_id,
@@ -164,9 +237,16 @@ serve(async (req) => {
               description: capitalizedDesc,
               category: aiData.category || 'Telegram',
               date: new Date().toISOString().slice(0, 10),
-              accountId: accounts?.[0]?.id
+              accountId: accountId
             })
-            reply = insErr ? `❌ Ошибка БД: ${insErr.message}` : `✅ Добавлено: ${capitalizedDesc} (${aiData.amount} ${currencySymbol})`
+
+            if (!insErr && accountId) {
+              const acc = accounts.find(a => a.id === accountId)
+              const delta = aiData.type === 'income' ? aiData.amount : -aiData.amount
+              await supabase.from('accounts').update({ balance: (acc.balance || 0) + delta }).eq('id', accountId)
+            }
+
+            reply = insErr ? `❌ Ошибка БД: ${insErr.message}` : `✅ Добавлено на счет ${targetAccount?.name || accounts?.[0]?.name || ''}: ${capitalizedDesc} (${aiData.amount} ${currencySymbol})`
             
           } else if (aiData.action === 'goal_deposit') {
             const { data: goal } = await supabase.from('savings_goals').select('id, saved_amount, name').eq('user_id', user.user_id).ilike('name', `%${aiData.goal_name}%`).maybeSingle()

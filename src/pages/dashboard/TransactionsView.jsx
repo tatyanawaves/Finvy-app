@@ -47,7 +47,7 @@ const typeBg = {
 const CURRENCY_SYMBOL = { USD: '$', EUR: '€', KZT: '₸', UAH: '₴', GBP: '£' }
 const symOf = (c) => CURRENCY_SYMBOL[c] || (c || '')
 
-export default function TransactionsView({ userId, refreshKey, accounts, currency = 'USD', profileType = 'business' }) {
+export default function TransactionsView({ userId, refreshKey, accounts, currency = 'USD', profileType = 'business', onRefresh }) {
   const basePath = '/dashboard'
   const { t, lang } = useLanguage()
   const sym = symOf(currency)
@@ -103,6 +103,27 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
     return acc
   }, {})
   const dateKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+
+  const handleToggleDelete = async (id, e) => {
+    e.stopPropagation()
+    if (!confirm(t.confirmDeleteTx || 'Удалить эту операцию?')) return
+    
+    // Find transaction to update account balance
+    const tx = transactions.find(t => t.id === id)
+    if (tx) {
+      const delta = tx.type === 'income' ? -tx.amount : tx.amount
+      const acc = accounts?.find(a => a.id === tx.accountId)
+      if (acc) {
+        await supabase.from('accounts').update({ balance: (acc.balance || 0) + delta }).eq('id', tx.accountId)
+      }
+    }
+
+    const { error } = await supabase.from('transactions').delete().eq('id', id)
+    if (!error) {
+      fetchTransactions()
+      onRefresh?.()
+    }
+  }
 
   const PERIOD_LABELS = { week: t.week, month: t.month, quarter: t.quarter, year: t.year, all: t.allTime }
   const TYPE_LABELS = { all: t.all, income: t.income, expense: t.expense, transfer: t.transfer }
@@ -229,10 +250,19 @@ export default function TransactionsView({ userId, refreshKey, accounts, currenc
                   {/* Date */}
                   <p className="hidden sm:block text-white/30 text-xs self-center">{formatDate(tx.date, lang)}</p>
                   {/* Amount */}
-                  <p className={`mt-2 sm:mt-0 text-xs font-bold self-center sm:text-right ${typeColor[tx.type] || 'text-white/50'}`}>
-                    {tx.type === 'expense' ? '−' : tx.type === 'income' ? '+' : ''}
-                    {Math.abs(tx.amount || 0).toLocaleString(lang, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </p>
+                  <div className="mt-2 sm:mt-0 flex items-center justify-between sm:justify-end gap-3 self-center">
+                    <p className={`text-xs font-bold ${typeColor[tx.type] || 'text-white/50'}`}>
+                      {tx.type === 'expense' ? '−' : tx.type === 'income' ? '+' : ''}
+                      {Math.abs(tx.amount || 0).toLocaleString(lang, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                    </p>
+                    <button 
+                      onClick={(e) => handleToggleDelete(tx.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-400 transition-all"
+                      title={t.delete || 'Удалить'}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

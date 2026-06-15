@@ -356,8 +356,8 @@ function DashboardInner() {
         {/* Page content */}
         <main className="flex-1 overflow-hidden">
           <Routes>
-            <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} />} />
-            <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} />} />
+            <Route index element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} onRefresh={() => setRefreshKey(k => k + 1)} />} />
+            <Route path="transactions" element={<TransactionsView userId={user.id} refreshKey={refreshKey} accounts={accounts} currency={defaultCurrency} profileType={profileType} onRefresh={() => setRefreshKey(k => k + 1)} />} />
             <Route path="budget" element={<BudgetView userId={user.id} refreshKey={refreshKey} profileType={profileType} />} />
             <Route path="goals" element={<GoalsView userId={user.id} profileType={profileType} />} />
             <Route path="analytics" element={<AnalyticsView userId={user.id} refreshKey={refreshKey} currency={defaultCurrency} accounts={accounts} profileType={profileType} />} />
